@@ -1,13 +1,25 @@
 
+struct VertexInput {
+    @location(0) position: vec3<f32>,
+    @location(1) size: vec2<f32>,
+    @location(2) color: vec3<f32>,
+};
+
+struct VertexOutput {
+    
+};
+
 
 @vertex
-fn vertex() {
-
+fn vertex(
+    in : VertexInput,
+) -> @builtin(postion) vec4<f32> {
+    return vec4<f32>(0.0, 0.0, 0.0, 1.0);
 }
 
 @fragment
-fn fragment() {
-
+fn fragment(in : VertexOutput) -> @location(0) vec4<f32> {
+    return vec4<f32>(1.0, 1.0, 1.0, 1.0);
 }
 
 fn box_sdf(p : vec2<f32>, bounds : vec2<f32>, radius : vec4<f32>) -> f32 {
