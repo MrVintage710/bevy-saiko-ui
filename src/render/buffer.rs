@@ -1,13 +1,8 @@
 use std::io::Read;
 
 use bevy::{
-    ecs::storage,
-    math::{Vec2, Vec3, Vec4},
-    render::render_resource::{
-        AsBindGroup, BindingResource, Buffer, BufferBinding, IntoBinding, ShaderType,
-        VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode,
-    },
-};
+    math::{Vec2, Vec3, Vec4}, render::render_resource::{AsBindGroup, ShaderType}}
+;
 
 //==============================================================================
 //             SaikoRectInstances

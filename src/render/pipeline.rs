@@ -1,28 +1,16 @@
-use std::num::NonZeroU64;
-
 use bevy::{
     core_pipeline::fullscreen_vertex_shader::fullscreen_shader_vertex_state,
     prelude::*,
     render::{
-        extract_component::ExtractComponent,
-        mesh::PrimitiveTopology,
-        render_asset::RenderAssets,
         render_resource::{
-            AsBindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingResource,
-            BindingType, BlendState, Buffer, BufferBinding, BufferBindingType,
-            CachedRenderPipelineId, ColorTargetState, ColorWrites, FragmentState, FrontFace,
-            MultisampleState, PipelineCache, PolygonMode, PreparedBindGroup, PrimitiveState,
-            RenderPipelineDescriptor, ShaderDefVal, ShaderStages, ShaderType,
-            SpecializedRenderPipeline, TextureFormat, TextureView, VertexState,
-        },
-        renderer::RenderDevice,
-        texture::{BevyDefault, FallbackImage},
+            AsBindGroup, BindGroupLayout, BlendState, CachedRenderPipelineId, ColorTargetState, ColorWrites, FragmentState, MultisampleState, PipelineCache, PreparedBindGroup, PrimitiveState, RenderPipelineDescriptor, TextureFormat, TextureView
+        }, renderer::RenderDevice, texture::{BevyDefault, FallbackImage}
     },
     utils::HashMap,
 };
 
 use super::{
-    buffer::{RectBuffer, SaikoBuffer},
+    buffer::SaikoBuffer,
     SAIKO_SHADER_HANDLE,
 };
 
@@ -44,25 +32,7 @@ impl FromWorld for SaikoRenderPipeline {
         let fallback_image = FallbackImage::from_world(world);
         let render_device = world.resource::<RenderDevice>();
 
-        // let bind_group_layout = render_device.create_bind_group_layout(
-        //     "SaikoUI BindGroupLayout",
-        //     &[
-        //         BindGroupLayoutEntry {
-        //             binding: 0,
-        //             visibility: ShaderStages::FRAGMENT,
-        //             ty: BindingType::Buffer {
-        //                 ty: BufferBindingType::Storage { read_only: true },
-        //                 has_dynamic_offset: false,
-        //                 min_binding_size: Some(BufferRect::min_size())
-        //             },
-        //             count: None,
-        //         }
-        //     ]
-        // );
-
         let bind_group_layout = SaikoBuffer::bind_group_layout(render_device);
-
-        // let precomputed_bind_group = SaikoBuffer::as_bind_group(&self, &bind_group_layout, render_device, images, &fallback_image)
 
         let pipeline = RenderPipelineDescriptor {
             label: Some("SaikoUI Render Pipeline".into()),
@@ -103,13 +73,4 @@ impl FromWorld for SaikoRenderPipeline {
             prepared_bind_group: None,
         }
     }
-}
-
-//==============================================================================
-//             SaikoShaderData
-//==============================================================================
-
-#[derive(Component, Default, Clone, Copy, ExtractComponent, ShaderType)]
-pub struct SaikoShaderData {
-    pub test: f32,
 }

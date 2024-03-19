@@ -1,17 +1,14 @@
 use bevy::prelude::*;
+use bevy::render::render_graph::{RenderLabel, RenderSubGraph};
 use bevy::render::{
-    render_graph::{RenderLabel, RenderSubGraph, ViewNode},
+    render_graph::ViewNode,
     render_resource::{
-        AsBindGroup, BindGroupEntries, BindGroupEntry, BindingResource, BufferDescriptor,
-        BufferInitDescriptor, BufferUsages, Operations, PipelineCache, RenderPassColorAttachment,
-        RenderPassDescriptor,
+        PipelineCache, RenderPassDescriptor,
     },
     view::ViewTarget,
 };
 
 use crate::render::pipeline::SaikoRenderPipeline;
-
-use super::buffer::SaikoBuffer;
 
 //==============================================================================
 //             SaikoRenderNode
@@ -51,25 +48,8 @@ impl ViewNode for SaikoRenderNode {
             return Ok(());
         };
 
-        // let test_rect = RectBuffer {
-        //     position: Vec3::ZERO,
-        //     size: Vec2::new(100.0, 100.0),
-        //     color: Vec4::new(1.0, 1.0, 0.0, 0.5),
-        //     corners: Vec4::ZERO,
-        // };
-
-        // let saiko_buffer = SaikoBuffer {
-        //     rectangles: vec![test_rect],
-        // };
-
-        // let buffer = render_context.render_device().create_buffer_with_data(&BufferInitDescriptor {
-        //     label: Some("Test Rect Buffer"),
-        //     usage: BufferUsages::STORAGE,
-        //     contents: test_rect.to_buffer(),
-        // });
-
+        //If the shaping data has been loaded into the bind group, render it
         if let Some(prepared_bind_group) = &saiko_pipeline_resource.prepared_bind_group {
-            println!("Rendering");
             let bind_group = &prepared_bind_group.bind_group;
 
             //Create the render pass. This is what will render the final result.
@@ -81,8 +61,11 @@ impl ViewNode for SaikoRenderNode {
                 occlusion_query_set: None,
             });
 
+            //Set the pipeline to be rendered and attach the bind group
             render_pass.set_render_pipeline(saiko_pipeline);
             render_pass.set_bind_group(0, bind_group, &[]);
+            
+            //Send it baby!
             render_pass.draw(0..3, 0..1);
         }
 
