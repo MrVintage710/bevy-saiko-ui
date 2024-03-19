@@ -1,4 +1,11 @@
 
+struct Rect {
+    position: vec3<f32>,
+    size: vec2<f32>,
+    color: vec4<f32>,
+    corners : vec4<f32>,
+};
+
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) size: vec2<f32>,
@@ -6,28 +13,23 @@ struct VertexInput {
 };
 
 struct VertexOutput {
-    
+    test : f32
 };
 
-
-@vertex
-fn vertex(
-    in : VertexInput,
-) -> @builtin(postion) vec4<f32> {
-    return vec4<f32>(0.0, 0.0, 0.0, 1.0);
-}
+@group(0) @binding(0)
+var<storage, read> rect : Rect;
 
 @fragment
-fn fragment(in : VertexOutput) -> @location(0) vec4<f32> {
-    return vec4<f32>(1.0, 1.0, 1.0, 1.0);
+fn fragment() -> @location(0) vec4<f32> {
+    return rect.color;
 }
 
-fn box_sdf(p : vec2<f32>, bounds : vec2<f32>, radius : vec4<f32>) -> f32 {
-    r.xy = if p.x > 0.0 { r.xy } else { r.zw };
-    r.x = if p.y > 0.0 { r.x } else { r.y };
-    let q = abs(p) - bounds + r.x;
-    return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
-}
+// fn box_sdf(p : vec2<f32>, bounds : vec2<f32>, radius : vec4<f32>) -> f32 {
+//     r.xy = if p.x > 0.0 { r.xy } else { r.zw };
+//     r.x = if p.y > 0.0 { r.x } else { r.y };
+//     let q = abs(p) - bounds + r.x;
+//     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
+// }
 
 // float sdRoundedBox( in vec2 p, in vec2 b, in vec4 r )
 // {

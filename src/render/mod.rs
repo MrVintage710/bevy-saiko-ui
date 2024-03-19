@@ -1,10 +1,10 @@
 mod pipeline;
 mod pass;
-mod vertex;
+mod buffer;
 
 use bevy::{asset::load_internal_asset, core_pipeline::{core_2d::graph::{Core2d, Node2d}, core_3d::graph::{Core3d, Node3d}}, prelude::*, render::{render_graph::{RenderGraph, RunGraphOnViewNode, ViewNodeRunner}, RenderApp}};
 
-use crate::render::{pass::{SaikoRenderLabel, SaikoSubGraph}, pipeline::SaikoRenderPipeline};
+use crate::render::{pass::{SaikoRenderLabel, SaikoSubGraph}, pipeline::SaikoRenderPipeline, buffer::BufferRect};
 
 use self::pass::SaikoRenderNode;
 
@@ -35,6 +35,16 @@ impl Plugin for SaikoRenderPlugin {
             "saiko.wgsl",
             Shader::from_wgsl
         );
+        
+        let test_rect = BufferRect {
+            position: [0.0, 0.0, 0.0],
+            size: [100.0, 100.0],
+            color: [1.0, 0.0, 1.0, 0.5],
+            corners: [0.0, 0.0, 0.0, 0.0],
+            ..Default::default()
+        };
+        
+        println!("Byte Rep: {:?} ----------- {}", test_rect.as_bytes(), BufferRect::SIZE);
         
         // app
             
@@ -82,4 +92,20 @@ fn get_ui_graph(render_app: &mut App) -> RenderGraph {
     let view_node = ViewNodeRunner::new(SaikoRenderNode, &mut render_app.world);
     saiko_graph.add_node(SaikoRenderLabel, view_node);
     saiko_graph
+}
+
+//==============================================================================
+//             SaikoUi Render Systems
+//==============================================================================
+
+fn extract_cameras_for_render (
+    
+) {
+    
+}
+
+fn prepare_ui_render_texture (
+    
+) {
+    
 }
