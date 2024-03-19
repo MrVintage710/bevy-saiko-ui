@@ -2,9 +2,7 @@ use bevy::prelude::*;
 use bevy::render::render_graph::{RenderLabel, RenderSubGraph};
 use bevy::render::{
     render_graph::ViewNode,
-    render_resource::{
-        PipelineCache, RenderPassDescriptor,
-    },
+    render_resource::{PipelineCache, RenderPassDescriptor},
     view::ViewTarget,
 };
 
@@ -64,7 +62,7 @@ impl ViewNode for SaikoRenderNode {
             //Set the pipeline to be rendered and attach the bind group
             render_pass.set_render_pipeline(saiko_pipeline);
             render_pass.set_bind_group(0, bind_group, &[]);
-            
+
             //Send it baby!
             render_pass.draw(0..3, 0..1);
         }

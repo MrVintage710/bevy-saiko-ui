@@ -3,16 +3,17 @@ use bevy::{
     prelude::*,
     render::{
         render_resource::{
-            AsBindGroup, BindGroupLayout, BlendState, CachedRenderPipelineId, ColorTargetState, ColorWrites, FragmentState, MultisampleState, PipelineCache, PreparedBindGroup, PrimitiveState, RenderPipelineDescriptor, TextureFormat, TextureView
-        }, renderer::RenderDevice, texture::{BevyDefault, FallbackImage}
+            AsBindGroup, BindGroupLayout, BlendState, CachedRenderPipelineId, ColorTargetState,
+            ColorWrites, FragmentState, MultisampleState, PipelineCache, PreparedBindGroup,
+            PrimitiveState, RenderPipelineDescriptor, TextureFormat, TextureView,
+        },
+        renderer::RenderDevice,
+        texture::{BevyDefault, FallbackImage},
     },
     utils::HashMap,
 };
 
-use super::{
-    buffer::SaikoBuffer,
-    SAIKO_SHADER_HANDLE,
-};
+use super::{buffer::SaikoBuffer, SAIKO_SHADER_HANDLE};
 
 //==============================================================================
 //             SaikoRenderPipeline
