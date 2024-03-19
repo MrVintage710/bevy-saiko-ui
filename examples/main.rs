@@ -1,4 +1,5 @@
 use bevy::{prelude::*, window::close_on_esc};
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_saiko_ui::SaikoUiPlugin;
 
 pub fn main() {
@@ -6,6 +7,7 @@ pub fn main() {
 
     app.add_plugins(DefaultPlugins)
         .add_plugins(SaikoUiPlugin)
+        .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
         .add_systems(Update, close_on_esc);
 

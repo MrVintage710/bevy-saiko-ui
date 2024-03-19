@@ -31,6 +31,8 @@ use self::{buffer::SaikoBuffer, pass::SaikoRenderNode};
 //  renderer that has been made for the Zed editor called GPUI. Here is
 //  a link to a blog post about their rendering: https://zed.dev/blog/videogame
 //
+//  TODO: Rewrite the following line
+//
 //  The following are the RenderingNode and the RenderPipeline.
 //  The RenderingNode is a struct that defines how the ui is renderded in
 //  the render world. The RenderPipeline is chached data that is used to
