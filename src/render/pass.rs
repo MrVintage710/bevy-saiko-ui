@@ -1,7 +1,9 @@
-use bevy::render::{render_graph::{RenderLabel, RenderSubGraph, ViewNode}, render_resource::{BindGroupEntries, BindGroupEntry, BindingResource, BufferDescriptor, BufferInitDescriptor, BufferUsages, Operations, PipelineCache, RenderPassColorAttachment, RenderPassDescriptor}, view::ViewTarget};
+use bevy::render::{render_graph::{RenderLabel, RenderSubGraph, ViewNode}, render_resource::{AsBindGroup, BindGroupEntries, BindGroupEntry, BindingResource, BufferDescriptor, BufferInitDescriptor, BufferUsages, Operations, PipelineCache, RenderPassColorAttachment, RenderPassDescriptor}, view::ViewTarget};
 use bevy::prelude::*;
 
-use crate::render::{pipeline::SaikoRenderPipeline, buffer::BufferRect};
+use crate::render::{pipeline::SaikoRenderPipeline};
+
+use super::buffer::SaikoBuffer;
 
 //==============================================================================
 //             SaikoRenderNode
@@ -40,47 +42,43 @@ impl ViewNode for SaikoRenderNode {
         let Some(saiko_pipeline) = pipeline_cache.get_render_pipeline(saiko_pipeline_resource.pipeline) 
             else { return Ok(()) };
         
-        let test_rect = BufferRect {
-            position: [0.0, 0.0, 0.0],
-            size: [100.0, 100.0],
-            color: [1.0, 0.0, 1.0, 0.5],
-            corners: [0.0, 0.0, 0.0, 0.0],
-            ..Default::default()
-        };
+        // let test_rect = RectBuffer {
+        //     position: Vec3::ZERO,
+        //     size: Vec2::new(100.0, 100.0),
+        //     color: Vec4::new(1.0, 1.0, 0.0, 0.5),
+        //     corners: Vec4::ZERO,
+        // };
         
-        println!("Byte Rep: {:?} ----------- {}", test_rect.as_bytes(), test_rect.as_bytes().len());
+        // let saiko_buffer = SaikoBuffer {
+        //     rectangles: vec![test_rect],
+        // };
         
-        let buffer = render_context.render_device().create_buffer_with_data(&BufferInitDescriptor { 
-            label: Some("Test Rect Buffer"),
-            usage: BufferUsages::STORAGE,
-            contents: test_rect.as_bytes(),
-        });
+        // let buffer = render_context.render_device().create_buffer_with_data(&BufferInitDescriptor { 
+        //     label: Some("Test Rect Buffer"),
+        //     usage: BufferUsages::STORAGE,
+        //     contents: test_rect.to_buffer(),
+        // });
         
-        let bind_group = render_context.render_device().create_bind_group(
-           "SaikoUI RenderPass BindGroup",
-           &saiko_pipeline_resource.bind_group_layout,
-            &[
-                BindGroupEntry {
-                    binding: 0,
-                    resource: buffer.as_entire_binding()
-                }
-            ]
-        );
+        if let Some(prepared_bind_group) = &saiko_pipeline_resource.prepared_bind_group {
+            println!("Rendering");
+            let bind_group = &prepared_bind_group.bind_group;
+            
+            //Create the render pass. This is what will render the final result.
+            let mut render_pass = render_context.begin_tracked_render_pass(RenderPassDescriptor {
+                label: "SaikoUI Render Pass".into(),
+                color_attachments: &[
+                    Some(view_target.get_color_attachment())
+                ],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
+            
+            render_pass.set_render_pipeline(saiko_pipeline);
+            render_pass.set_bind_group(0, bind_group, &[]);
+            render_pass.draw(0..3, 0..1);
+        }
         
-        //Create the render pass. This is what will render the final result.
-        let mut render_pass = render_context.begin_tracked_render_pass(RenderPassDescriptor {
-            label: "SaikoUI Render Pass".into(),
-            color_attachments: &[
-                Some(view_target.get_color_attachment())
-            ],
-            depth_stencil_attachment: None,
-            timestamp_writes: None,
-            occlusion_query_set: None,
-        });
-        
-        render_pass.set_render_pipeline(saiko_pipeline);
-        render_pass.set_bind_group(0, &bind_group, &[]);
-        render_pass.draw(0..3, 0..1);
         
         Ok(())
     }

@@ -1,8 +1,8 @@
 use std::num::NonZeroU64;
 
-use bevy::{core_pipeline::fullscreen_vertex_shader::fullscreen_shader_vertex_state, prelude::*, render::{extract_component::ExtractComponent, mesh::PrimitiveTopology, render_resource::{BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingResource, BindingType, BlendState, Buffer, BufferBinding, BufferBindingType, CachedRenderPipelineId, ColorTargetState, ColorWrites, FragmentState, FrontFace, MultisampleState, PipelineCache, PolygonMode, PrimitiveState, RenderPipelineDescriptor, ShaderDefVal, ShaderStages, ShaderType, SpecializedRenderPipeline, TextureFormat, TextureView, VertexState}, renderer::RenderDevice, texture::BevyDefault}, utils::HashMap};
+use bevy::{core_pipeline::fullscreen_vertex_shader::fullscreen_shader_vertex_state, prelude::*, render::{extract_component::ExtractComponent, mesh::PrimitiveTopology, render_asset::RenderAssets, render_resource::{AsBindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingResource, BindingType, BlendState, Buffer, BufferBinding, BufferBindingType, CachedRenderPipelineId, ColorTargetState, ColorWrites, FragmentState, FrontFace, MultisampleState, PipelineCache, PolygonMode, PreparedBindGroup, PrimitiveState, RenderPipelineDescriptor, ShaderDefVal, ShaderStages, ShaderType, SpecializedRenderPipeline, TextureFormat, TextureView, VertexState}, renderer::RenderDevice, texture::{BevyDefault, FallbackImage}}, utils::HashMap};
 
-use super::{buffer::BufferRect, SAIKO_SHADER_HANDLE};
+use super::{buffer::{RectBuffer, SaikoBuffer}, SAIKO_SHADER_HANDLE};
 
 //==============================================================================
 //             SaikoRenderPipeline
@@ -13,27 +13,34 @@ pub struct SaikoRenderPipeline {
     pub(crate) pipeline : CachedRenderPipelineId,
     pub(crate) bind_group_layout: BindGroupLayout,
     pub(crate) render_texture : HashMap<Entity, TextureView>,
+    pub(crate) fallback_image : FallbackImage,
+    pub(crate) prepared_bind_group : Option<PreparedBindGroup<()>>,
 }
 
 impl FromWorld for SaikoRenderPipeline {
     fn from_world(world: &mut World) -> Self {
+        let fallback_image = FallbackImage::from_world(world);
         let render_device = world.resource::<RenderDevice>();
         
-        let bind_group_layout = render_device.create_bind_group_layout(
-            "SaikoUI BindGroupLayout", 
-            &[
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::FRAGMENT,
-                    ty: BindingType::Buffer { 
-                        ty: BufferBindingType::Storage { read_only: true }, 
-                        has_dynamic_offset: false, 
-                        min_binding_size: NonZeroU64::new(BufferRect::SIZE as u64)
-                    },
-                    count: None,
-                }
-            ]
-        );
+        // let bind_group_layout = render_device.create_bind_group_layout(
+        //     "SaikoUI BindGroupLayout", 
+        //     &[
+        //         BindGroupLayoutEntry {
+        //             binding: 0,
+        //             visibility: ShaderStages::FRAGMENT,
+        //             ty: BindingType::Buffer { 
+        //                 ty: BufferBindingType::Storage { read_only: true }, 
+        //                 has_dynamic_offset: false, 
+        //                 min_binding_size: Some(BufferRect::min_size())
+        //             },
+        //             count: None,
+        //         }
+        //     ]
+        // );
+        
+        let bind_group_layout = SaikoBuffer::bind_group_layout(render_device);
+        
+        // let precomputed_bind_group = SaikoBuffer::as_bind_group(&self, &bind_group_layout, render_device, images, &fallback_image)
         
         let pipeline = RenderPipelineDescriptor {
             label: Some("SaikoUI Render Pipeline".into()),
@@ -70,6 +77,8 @@ impl FromWorld for SaikoRenderPipeline {
             pipeline,
             bind_group_layout,
             render_texture: HashMap::new(),
+            fallback_image,
+            prepared_bind_group: None,
         }
     }
 }
