@@ -1,6 +1,13 @@
 use std::io::Read;
 
-use bevy::{ecs::storage, math::{Vec2, Vec3, Vec4}, render::render_resource::{AsBindGroup, BindingResource, Buffer, BufferBinding, IntoBinding, ShaderType, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode}};
+use bevy::{
+    ecs::storage,
+    math::{Vec2, Vec3, Vec4},
+    render::render_resource::{
+        AsBindGroup, BindingResource, Buffer, BufferBinding, IntoBinding, ShaderType,
+        VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode,
+    },
+};
 
 //==============================================================================
 //             SaikoRectInstances
@@ -9,13 +16,12 @@ use bevy::{ecs::storage, math::{Vec2, Vec3, Vec4}, render::render_resource::{AsB
 #[derive(AsBindGroup)]
 pub struct SaikoBuffer {
     #[storage(0, read_only)]
-    pub rectangles : Vec<RectBuffer>,
+    pub rectangles: Vec<RectBuffer>,
 }
 
 //==============================================================================
 //             SaikoRectInstance
 //==============================================================================
-
 
 #[derive(ShaderType, Default)]
 pub struct RectBuffer {
@@ -31,17 +37,17 @@ impl RectBuffer {
         self.position = position.into();
         self
     }
-    
+
     pub fn with_size(mut self, size: impl Into<Vec2>) -> Self {
         self.size = size.into();
         self
     }
-    
+
     pub fn with_color(mut self, color: impl Into<Vec4>) -> Self {
         self.color = color.into();
         self
     }
-    
+
     pub fn with_corners(mut self, corners: impl Into<Vec4>) -> Self {
         self.corners = corners.into();
         self

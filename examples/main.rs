@@ -1,22 +1,16 @@
-
 use bevy::{prelude::*, window::close_on_esc};
 use bevy_saiko_ui::SaikoUiPlugin;
 
 pub fn main() {
     let mut app = App::new();
-    
-    app
-        .add_plugins(DefaultPlugins)
+
+    app.add_plugins(DefaultPlugins)
         .add_plugins(SaikoUiPlugin)
-    
         .add_systems(Startup, setup)
-    
-        .add_systems(Update, close_on_esc)
-    ;
-    
+        .add_systems(Update, close_on_esc);
+
     app.run();
 }
-
 
 //This is just the example scene from here: https://bevyengine.org/examples/3D%20Rendering/3d-scene/
 fn setup(
@@ -47,7 +41,7 @@ fn setup(
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..default()
     });
-    
+
     // camera
     commands.spawn(Camera3dBundle {
         transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
