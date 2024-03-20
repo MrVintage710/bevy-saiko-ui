@@ -1,4 +1,5 @@
 mod render;
+mod common;
 
 use bevy::prelude::*;
 
