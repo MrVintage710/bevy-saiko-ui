@@ -12,8 +12,8 @@ use bevy::prelude::*;
 
 /// SaikoBounds describes an Rectagul that is axis aligned that determines
 /// the bounds of a UI element.
-#[derive(Reflect)]
-pub struct SaikoBounds {
+#[derive(Reflect, Default)]
+pub struct Bounds {
     /// The center of the bounds.
     pub center: Vec2,
     /// The size of the bounds. This is the width and height from edge to edge.
@@ -23,9 +23,9 @@ pub struct SaikoBounds {
 }
 
 
-impl SaikoBounds {
+impl Bounds {
     pub fn new(center: Vec2, size: Vec2, z_index: i32) -> Self {
-        SaikoBounds {
+        Bounds {
             center,
             size,
             z_index,

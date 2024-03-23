@@ -9,10 +9,16 @@ use bevy::{
 //             SaikoRectInstances
 //==============================================================================
 
-#[derive(AsBindGroup)]
+#[derive(AsBindGroup, Default)]
 pub struct SaikoBuffer {
     #[storage(0, read_only)]
     pub rectangles: Vec<RectBuffer>,
+}
+
+impl SaikoBuffer {
+    pub fn push_rect(&mut self, rect : impl Into<RectBuffer>) {
+        self.rectangles.push(rect.into())
+    }
 }
 
 //==============================================================================

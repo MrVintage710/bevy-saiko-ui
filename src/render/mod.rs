@@ -111,7 +111,6 @@ fn prepare_ui_render_texture(
     render_device: Res<RenderDevice>,
 ) {
     if saiko_pipeline.prepared_bind_group.is_none() {
-        println!("Creating a thing");
 
         let buffer = SaikoBuffer {
             rectangles: vec![RectBuffer::default()

@@ -24,16 +24,17 @@ fn fragment(
     @builtin(position) pos: vec4<f32>,
     @location(0) uv: vec2<f32>,
 ) -> @location(0) vec4<f32> {
-    var resolution = pos.xy / uv;
-    var fragment_pos = 
-    var distance = box_sdf(uv, vec2<f32>(0.1, 0.1));
+    var normalized_uv = uv * 2.0 - 1.0;
+    var resolution = (pos.xy / uv);
+    // var normalized_pos = pos.xy + (resolution / 2.0);
+    var distance = box_sdf(normalized_uv, vec2<f32>(0.1, 0.1));
     // let distance = box_sdf();
-    if (distance < 0.0) {
-        return vec4<f32>(1.0, 0.0, 0.0, 1.0);
-    }
-    
-    return rect[0].color * distance;
-    // return vec4<f32>(1.0, 0.0, 0.0, 1.0);
+    // 
+    return select(
+        vec4<f32>(1.0, 0.0, 0.0, 1.0), 
+        vec4<f32>(0.0, 0.0, 0.0, 0.0), 
+        distance > 0.0
+    );
 }
 
 fn box_sdf(p : vec2<f32>, bounds : vec2<f32>) -> f32 {

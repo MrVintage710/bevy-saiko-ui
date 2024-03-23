@@ -1,1 +1,2 @@
-mod bounds;
+pub mod bounds;
+pub mod value;
