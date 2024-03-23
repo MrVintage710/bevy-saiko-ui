@@ -1,12 +1,9 @@
-use std::io::Read;
-
 use bevy::{
-    math::{Vec2, Vec3, Vec4},
-    render::render_resource::{AsBindGroup, ShaderType},
+    prelude::*, math::{Vec2, Vec3, Vec4}, render::render_resource::{AsBindGroup, PreparedBindGroup, ShaderType}
 };
 
 //==============================================================================
-//             SaikoRectInstances
+//             Saikobuffer
 //==============================================================================
 
 #[derive(AsBindGroup, Default)]
@@ -20,6 +17,13 @@ impl SaikoBuffer {
         self.rectangles.push(rect.into())
     }
 }
+
+//==============================================================================
+//             SaikoPreparedBuffer
+//==============================================================================
+
+#[derive(Component)]
+pub struct SaikoPreparedBuffer(pub PreparedBindGroup<()>);
 
 //==============================================================================
 //             SaikoRectInstance

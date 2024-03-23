@@ -1,4 +1,4 @@
-mod buffer;
+pub mod buffer;
 mod pass;
 mod pipeline;
 
@@ -10,21 +10,17 @@ use bevy::{
     },
     prelude::*,
     render::{
-        render_asset::RenderAssets,
-        render_graph::{RenderGraph, RunGraphOnViewNode, ViewNodeRunner},
-        render_resource::AsBindGroup,
-        renderer::RenderDevice,
-        Render, RenderApp,
+        render_asset::RenderAssets, render_graph::{RenderGraph, RunGraphOnViewNode, ViewNodeRunner}, render_resource::AsBindGroup, renderer::RenderDevice, view::RenderLayers, Extract, Render, RenderApp
     },
 };
 
-use crate::render::{
+use crate::{common::MarkSaikoUiDirty, render::{
     buffer::RectBuffer,
     pass::{SaikoRenderLabel, SaikoSubGraph},
     pipeline::SaikoRenderPipeline,
-};
+}, ui::node::SaikoNode};
 
-use self::{buffer::SaikoBuffer, pass::SaikoRenderNode};
+use self::{buffer::{SaikoBuffer, SaikoPreparedBuffer}, pass::SaikoRenderNode};
 
 //==============================================================================
 //  This is the render module for Saiko UI. It has been inspired by the
@@ -100,32 +96,69 @@ fn get_ui_graph(render_app: &mut App) -> RenderGraph {
 }
 
 //==============================================================================
+//             SaikoRenderTarget
+//==============================================================================
+
+#[derive(Component)]
+pub struct SaikoRenderTarget(pub Option<RenderLayers>, pub SaikoBuffer);
+
+//==============================================================================
 //             SaikoUi Render Systems
 //==============================================================================
 
-fn extract_cameras_for_render() {}
+pub fn extract_cameras_for_render(
+    mut commands : Commands,
+    cameras : Extract<
+        Query<(Entity, Option<&RenderLayers>), With<Camera>>
+    >,
+    ui_dirty : Extract<
+        EventReader<MarkSaikoUiDirty>
+    >
+) {
+    if !ui_dirty.is_empty() {
+        for (entity, render_layers) in cameras.iter() {
+            let mut cam_entity = commands.get_or_spawn(entity);
+            let render_layers = render_layers.map(|value| value.clone());
+            cam_entity.insert(SaikoRenderTarget(render_layers, SaikoBuffer::default()));
+        }
+    }
+}
 
 fn prepare_ui_render_texture(
-    mut saiko_pipeline: ResMut<SaikoRenderPipeline>,
+    mut commands : Commands,
+    saiko_pipeline: ResMut<SaikoRenderPipeline>,
+    render_targets : Query<(Entity, &SaikoRenderTarget)>,
     images: Res<RenderAssets<Image>>,
     render_device: Res<RenderDevice>,
 ) {
-    if saiko_pipeline.prepared_bind_group.is_none() {
-
-        let buffer = SaikoBuffer {
-            rectangles: vec![RectBuffer::default()
-                .with_size((100.0, 100.0))
-                .with_color((1.0, 0.0, 0.0, 0.5))],
-        };
-
-        let Ok(bind_group) = buffer.as_bind_group(
+    for (render_target_entity, render_target) in render_targets.iter() {
+        
+        let Ok(prepared_bind_group) = render_target.1.as_bind_group(
             &saiko_pipeline.bind_group_layout,
             render_device.as_ref(),
             images.as_ref(),
             &saiko_pipeline.fallback_image,
-        ) else {
-            return;
-        };
-        saiko_pipeline.prepared_bind_group = Some(bind_group);
+        ) else { continue };
+        
+        commands.entity(render_target_entity).insert(SaikoPreparedBuffer(prepared_bind_group));
     }
+    
+    // if saiko_pipeline.bind_groups.is_none() {
+
+    //     let buffer = SaikoBuffer {
+    //         rectangles: vec![RectBuffer::default()
+    //             .with_size((100.0, 100.0))
+    //             .with_color((1.0, 0.0, 0.0, 0.5))],
+    //     };
+
+    //     let Ok(bind_group) = buffer.as_bind_group(
+    //         &saiko_pipeline.bind_group_layout,
+    //         render_device.as_ref(),
+    //         images.as_ref(),
+    //         &saiko_pipeline.fallback_image,
+    //     ) else {
+    //         return;
+    //     };
+    //     saiko_pipeline.bind_groups = Some(bind_group);
+    // }
 }

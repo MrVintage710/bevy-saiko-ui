@@ -6,10 +6,21 @@
 
 use bevy::prelude::*;
 
+use crate::common::bounds::Bounds;
+
+use super::position::RelativePosition;
+
 //==============================================================================
 //          SaikoNode Component
 //==============================================================================
 
+#[derive(Component, Reflect)]
 pub struct SaikoNode {
-    
+    bounds : Bounds,
+    position : RelativePosition
 }
+
+//==============================================================================
+//          SaikoNode Systems
+//==============================================================================
+

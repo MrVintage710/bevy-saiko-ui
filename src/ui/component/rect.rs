@@ -1,23 +1,15 @@
-pub mod bounds;
-pub mod value;
+//==============================================================================
+//  This is a rectagle component. This is mostly used for testing the rect 
+// drawer.
+//==============================================================================
 
 use bevy::prelude::*;
 
 //==============================================================================
-//          Common Module
+//          SaikoRectComponent
 //==============================================================================
 
-pub struct SaikoUiCommonPlugin;
-
-impl Plugin for SaikoUiCommonPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_event::<MarkSaikoUiDirty>();
-    }
+#[derive(Component, Reflect)]
+pub struct RectComponent {
+    color : Color,
 }
-
-//==============================================================================
-//          Common Events
-//==============================================================================
-
-#[derive(Event)]
-pub struct MarkSaikoUiDirty;

@@ -23,9 +23,9 @@ use super::{buffer::SaikoBuffer, SAIKO_SHADER_HANDLE};
 pub struct SaikoRenderPipeline {
     pub(crate) pipeline: CachedRenderPipelineId,
     pub(crate) bind_group_layout: BindGroupLayout,
-    pub(crate) render_texture: HashMap<Entity, TextureView>,
+    pub(crate) render_textures: HashMap<Entity, TextureView>,
     pub(crate) fallback_image: FallbackImage,
-    pub(crate) prepared_bind_group: Option<PreparedBindGroup<()>>,
+    pub(crate) bind_groups: Option<PreparedBindGroup<()>>,
 }
 
 impl FromWorld for SaikoRenderPipeline {
@@ -69,9 +69,9 @@ impl FromWorld for SaikoRenderPipeline {
         SaikoRenderPipeline {
             pipeline,
             bind_group_layout,
-            render_texture: HashMap::new(),
+            render_textures: HashMap::new(),
             fallback_image,
-            prepared_bind_group: None,
+            bind_groups: None,
         }
     }
 }

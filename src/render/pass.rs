@@ -8,6 +8,9 @@ use bevy::render::{
 
 use crate::render::pipeline::SaikoRenderPipeline;
 
+use super::buffer::SaikoPreparedBuffer;
+use super::SaikoRenderTarget;
+
 //==============================================================================
 //             SaikoRenderNode
 //==============================================================================
@@ -22,7 +25,11 @@ pub struct SaikoRenderLabel;
 pub struct SaikoRenderNode;
 
 impl ViewNode for SaikoRenderNode {
-    type ViewQuery = (&'static ViewTarget);
+    type ViewQuery = (
+        &'static ViewTarget,
+        &'static SaikoRenderTarget,
+        &'static SaikoPreparedBuffer
+    );
 
     fn run<'w>(
         &self,
@@ -31,7 +38,7 @@ impl ViewNode for SaikoRenderNode {
         view_query: bevy::ecs::query::QueryItem<'w, Self::ViewQuery>,
         world: &'w World,
     ) -> Result<(), bevy::render::render_graph::NodeRunError> {
-        let (view_target) = view_query;
+        let (view_target, saiko_render_target, prepared_buffer) = view_query;
 
         //Get Pipeline from Resources
         let saiko_pipeline_resource = world.resource::<SaikoRenderPipeline>();
@@ -47,25 +54,25 @@ impl ViewNode for SaikoRenderNode {
         };
 
         //If the shaping data has been loaded into the bind group, render it
-        if let Some(prepared_bind_group) = &saiko_pipeline_resource.prepared_bind_group {
-            let bind_group = &prepared_bind_group.bind_group;
+        // if let Some(prepared_bind_group) = &saiko_pipeline_resource.bind_groups {
+        let bind_group = &prepared_buffer.0.bind_group;
 
-            //Create the render pass. This is what will render the final result.
-            let mut render_pass = render_context.begin_tracked_render_pass(RenderPassDescriptor {
-                label: "SaikoUI Render Pass".into(),
-                color_attachments: &[Some(view_target.get_color_attachment())],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-            });
+        //Create the render pass. This is what will render the final result.
+        let mut render_pass = render_context.begin_tracked_render_pass(RenderPassDescriptor {
+            label: "SaikoUI Render Pass".into(),
+            color_attachments: &[Some(view_target.get_color_attachment())],
+            depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+        });
 
-            //Set the pipeline to be rendered and attach the bind group
-            render_pass.set_render_pipeline(saiko_pipeline);
-            render_pass.set_bind_group(0, bind_group, &[]);
+        //Set the pipeline to be rendered and attach the bind group
+        render_pass.set_render_pipeline(saiko_pipeline);
+        render_pass.set_bind_group(0, bind_group, &[]);
 
-            //Send it baby!
-            render_pass.draw(0..3, 0..1);
-        }
+        //Send it baby!
+        render_pass.draw(0..3, 0..1);
+        // }
 
         Ok(())
     }
