@@ -25,7 +25,6 @@ pub struct SaikoRenderPipeline {
     pub(crate) bind_group_layout: BindGroupLayout,
     pub(crate) render_textures: HashMap<Entity, TextureView>,
     pub(crate) fallback_image: FallbackImage,
-    pub(crate) bind_groups: Option<PreparedBindGroup<()>>,
 }
 
 impl FromWorld for SaikoRenderPipeline {
@@ -71,7 +70,6 @@ impl FromWorld for SaikoRenderPipeline {
             bind_group_layout,
             render_textures: HashMap::new(),
             fallback_image,
-            bind_groups: None,
         }
     }
 }

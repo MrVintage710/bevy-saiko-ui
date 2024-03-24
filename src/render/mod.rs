@@ -56,6 +56,7 @@ impl Plugin for SaikoRenderPlugin {
             return;
         };
 
+        render_app.add_systems(ExtractSchedule, extract_cameras_for_render);
         render_app.add_systems(Render, prepare_ui_render_texture);
 
         let ui_graph_2d = get_ui_graph(render_app);

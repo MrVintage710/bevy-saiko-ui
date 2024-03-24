@@ -8,7 +8,7 @@ mod rect;
 
 use std::marker::PhantomData;
 
-use bevy::{prelude::*, render::{Extract, RenderApp}};
+use bevy::{prelude::*, render::{view::RenderLayers, Extract, RenderApp}};
 
 use crate::render::{buffer::SaikoBuffer, SaikoRenderTarget};
 
@@ -45,12 +45,22 @@ impl <T : SaikoComponent> Plugin for SaikoComponentPlugin<T> {
 //==============================================================================
 
 fn extract_components<T : SaikoComponent>(
-    mut render_targets : Query<&mut SaikoRenderTarget>,
-    query : Extract<Query<&T>>
+    mut render_targets : Query<(&mut SaikoRenderTarget, Option<&RenderLayers>)>,
+    query : Extract<Query<(&T, Option<&RenderLayers>, Option<&InheritedVisibility>)>>
 ) {
-    for mut render_target in render_targets.iter_mut() {
-        for component in query.iter() {
-            component.render(&mut render_target.1);
+    for (mut render_target, render_target_layers) in render_targets.iter_mut() {
+        for (component, component_render_layers, component_visability) in query.iter() {
+            let visable = component_visability.map_or(true, |v| v.get());
+            let on_layer = match (render_target_layers, component_render_layers) {
+                (Some(render_layers), Some(component_render_layers)) => render_layers.intersects(component_render_layers),
+                (None, Some(_)) |
+                (Some(_), None) => false,
+                _ => true
+            };
+            
+            if on_layer && visable {
+                component.render(&mut render_target.1);
+            }
         }
     }
 }

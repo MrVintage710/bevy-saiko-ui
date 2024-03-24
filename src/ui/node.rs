@@ -20,6 +20,15 @@ pub struct SaikoNode {
     position : RelativePosition
 }
 
+impl SaikoNode {
+    pub fn new(position : RelativePosition) -> Self {
+        SaikoNode {
+            bounds : Bounds::default(),
+            position
+        }
+    }
+}
+
 //==============================================================================
 //          SaikoNode Systems
 //==============================================================================
