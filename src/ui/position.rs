@@ -17,7 +17,7 @@ use crate::common::{bounds::Bounds, value::{Percent, Value}};
 #[derive(Reflect)]
 pub enum RelativePosition {
     Align(Percent, Percent),
-    Relative(Bounds)
+    Relative(Bounds),
 }
 
 impl RelativePosition {

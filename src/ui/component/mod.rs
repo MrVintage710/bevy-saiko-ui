@@ -4,7 +4,7 @@
 //  funtion whenever a render is called.
 //==============================================================================
 
-mod rect;
+pub mod rect;
 
 use std::marker::PhantomData;
 
@@ -24,7 +24,6 @@ pub trait SaikoComponent : Component {
 //          SaikoComponentPlugin
 //==============================================================================
 
-#[derive(Default)]
 pub struct SaikoComponentPlugin<T : SaikoComponent>(PhantomData<T>);
 
 impl <T : SaikoComponent> Plugin for SaikoComponentPlugin<T> {
@@ -35,8 +34,14 @@ impl <T : SaikoComponent> Plugin for SaikoComponentPlugin<T> {
         
         render_app.add_systems(
             ExtractSchedule,
-            extract_components::<T>.after(crate::render::extract_cameras_for_render),
+            extract_components::<T>.after(apply_deferred),
         );
+    }
+}
+
+impl <T : SaikoComponent> Default for SaikoComponentPlugin<T> {
+    fn default() -> Self {
+        SaikoComponentPlugin(PhantomData)
     }
 }
 
@@ -57,7 +62,7 @@ fn extract_components<T : SaikoComponent>(
                 (Some(_), None) => false,
                 _ => true
             };
-            
+
             if on_layer && visable {
                 component.render(&mut render_target.1);
             }

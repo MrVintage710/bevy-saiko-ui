@@ -47,16 +47,19 @@ impl Plugin for SaikoRenderPlugin {
     fn build(&self, app: &mut App) {
         load_internal_asset!(app, SAIKO_SHADER_HANDLE, "saiko.wgsl", Shader::from_wgsl);
 
-        // app
-
-        // ;
+        app.init_resource::<SaikoRenderState>();
+        
+        app
+            .add_systems(First, reset_saiko_render_state)
+            .add_systems(Last, update_saiko_render_state)
+        ;
 
         // We need to get the render app from the main app
         let Ok(render_app) = app.get_sub_app_mut(RenderApp) else {
             return;
         };
 
-        render_app.add_systems(ExtractSchedule, extract_cameras_for_render);
+        render_app.add_systems(ExtractSchedule, (extract_cameras_for_render, apply_deferred));
         render_app.add_systems(Render, prepare_ui_render_texture);
 
         let ui_graph_2d = get_ui_graph(render_app);
@@ -97,6 +100,36 @@ fn get_ui_graph(render_app: &mut App) -> RenderGraph {
 }
 
 //==============================================================================
+//             SaikoRenderIsDirty
+//==============================================================================
+
+#[derive(Resource, Default)]
+pub struct SaikoRenderState{
+    is_dirty: bool,
+}
+
+impl SaikoRenderState {
+    pub fn is_dirty(&self) -> bool {
+        self.is_dirty
+    }
+}
+
+fn update_saiko_render_state(
+    mut state : ResMut<SaikoRenderState>,
+    dirty : EventReader<MarkSaikoUiDirty>
+) {
+    if !dirty.is_empty() {
+        state.is_dirty = true;
+    }
+}
+
+fn reset_saiko_render_state(
+    mut state : ResMut<SaikoRenderState>
+) {
+    state.is_dirty = false;
+}
+
+//==============================================================================
 //             SaikoRenderTarget
 //==============================================================================
 
@@ -107,16 +140,16 @@ pub struct SaikoRenderTarget(pub Option<RenderLayers>, pub SaikoBuffer);
 //             SaikoUi Render Systems
 //==============================================================================
 
-pub fn extract_cameras_for_render(
+fn extract_cameras_for_render(
     mut commands : Commands,
     cameras : Extract<
         Query<(Entity, Option<&RenderLayers>), With<Camera>>
     >,
     ui_dirty : Extract<
-        EventReader<MarkSaikoUiDirty>
+        Res<SaikoRenderState>
     >
 ) {
-    if !ui_dirty.is_empty() {
+    if ui_dirty.is_dirty() {
         for (entity, render_layers) in cameras.iter() {
             let mut cam_entity = commands.get_or_spawn(entity);
             let render_layers = render_layers.map(|value| value.clone());
@@ -133,7 +166,6 @@ fn prepare_ui_render_texture(
     render_device: Res<RenderDevice>,
 ) {
     for (render_target_entity, render_target) in render_targets.iter() {
-        
         let Ok(prepared_bind_group) = render_target.1.as_bind_group(
             &saiko_pipeline.bind_group_layout,
             render_device.as_ref(),

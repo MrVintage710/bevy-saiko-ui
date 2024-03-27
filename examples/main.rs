@@ -1,6 +1,6 @@
 use bevy::{prelude::*, window::close_on_esc};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_saiko_ui::{common::bounds::Bounds, ui::{node::SaikoNode, position::RelativePosition}, SaikoUiPlugin};
+use bevy_saiko_ui::{common::{bounds::Bounds, MarkSaikoUiDirty}, ui::{component::rect::RectComponent, node::SaikoNode, position::RelativePosition}, SaikoUiPlugin};
 
 pub fn main() {
     let mut app = App::new();
@@ -9,7 +9,7 @@ pub fn main() {
         .add_plugins(SaikoUiPlugin)
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
-        .add_systems(Update, close_on_esc);
+        .add_systems(Update, (close_on_esc, update));
 
     app.run();
 }
@@ -19,6 +19,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut event_writer: EventWriter<MarkSaikoUiDirty>,
 ) {
     // circular base
     commands.spawn(PbrBundle {
@@ -52,5 +53,12 @@ fn setup(
     
     commands.spawn((
         SaikoNode::new(RelativePosition::Relative(Bounds::default())),
+        RectComponent::default()
     ));
+}
+
+fn update(
+    mut event_writer: EventWriter<MarkSaikoUiDirty>,
+) {
+    event_writer.send(MarkSaikoUiDirty);
 }
