@@ -60,5 +60,5 @@ fn setup(
 fn update(
     mut event_writer: EventWriter<MarkSaikoUiDirty>,
 ) {
-    event_writer.send(MarkSaikoUiDirty);
+    // event_writer.send(MarkSaikoUiDirty);
 }

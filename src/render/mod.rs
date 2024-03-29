@@ -10,14 +10,14 @@ use bevy::{
     },
     prelude::*,
     render::{
-        render_asset::RenderAssets, render_graph::{RenderGraph, RunGraphOnViewNode, ViewNodeRunner}, render_resource::AsBindGroup, renderer::RenderDevice, view::RenderLayers, Extract, Render, RenderApp
+        render_asset::RenderAssets, render_graph::{RenderGraph, RunGraphOnViewNode, ViewNodeRunner}, render_resource::AsBindGroup, renderer::RenderDevice, view::RenderLayers, Extract, Render, RenderApp, RenderSet
     },
 };
 
 use crate::{common::MarkSaikoUiDirty, render::{
     buffer::RectBuffer,
     pass::{SaikoRenderLabel, SaikoSubGraph},
-    pipeline::SaikoRenderPipeline,
+    pipeline::{SaikoRenderPipeline, SaikoRenderPipelinePlugin},
 }, ui::node::SaikoNode};
 
 use self::{buffer::{SaikoBuffer, SaikoPreparedBuffer}, pass::SaikoRenderNode};
@@ -50,6 +50,8 @@ impl Plugin for SaikoRenderPlugin {
         app.init_resource::<SaikoRenderState>();
         
         app
+            .add_plugins(SaikoRenderPipelinePlugin)
+            
             .add_systems(First, reset_saiko_render_state)
             .add_systems(Last, update_saiko_render_state)
         ;
@@ -60,7 +62,7 @@ impl Plugin for SaikoRenderPlugin {
         };
 
         render_app.add_systems(ExtractSchedule, (extract_cameras_for_render, apply_deferred));
-        render_app.add_systems(Render, prepare_ui_render_texture);
+        render_app.add_systems(Render, prepare_prepare_bind_groups.in_set(RenderSet::PrepareResources));
 
         let ui_graph_2d = get_ui_graph(render_app);
         let ui_graph_3d = get_ui_graph(render_app);
@@ -82,14 +84,6 @@ impl Plugin for SaikoRenderPlugin {
             graph_3d.add_node_edge(SaikoRenderLabel, Node3d::Upscaling);
         }
     }
-
-    fn finish(&self, app: &mut App) {
-        let Ok(render_app) = app.get_sub_app_mut(RenderApp) else {
-            return;
-        };
-
-        render_app.init_resource::<SaikoRenderPipeline>();
-    }
 }
 
 fn get_ui_graph(render_app: &mut App) -> RenderGraph {
@@ -103,9 +97,17 @@ fn get_ui_graph(render_app: &mut App) -> RenderGraph {
 //             SaikoRenderIsDirty
 //==============================================================================
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct SaikoRenderState{
     is_dirty: bool,
+}
+
+impl Default for SaikoRenderState {
+    fn default() -> Self {
+        Self {
+            is_dirty: true,
+        }
+    }
 }
 
 impl SaikoRenderState {
@@ -142,23 +144,26 @@ pub struct SaikoRenderTarget(pub Option<RenderLayers>, pub SaikoBuffer);
 
 fn extract_cameras_for_render(
     mut commands : Commands,
+    mut has_initialized : Local<bool>,
     cameras : Extract<
         Query<(Entity, Option<&RenderLayers>), With<Camera>>
     >,
     ui_dirty : Extract<
         Res<SaikoRenderState>
-    >
+    >,
 ) {
-    if ui_dirty.is_dirty() {
+    if ui_dirty.is_dirty() || !*has_initialized {
         for (entity, render_layers) in cameras.iter() {
             let mut cam_entity = commands.get_or_spawn(entity);
             let render_layers = render_layers.map(|value| value.clone());
             cam_entity.insert(SaikoRenderTarget(render_layers, SaikoBuffer::default()));
         }
+        
+        *has_initialized = true;
     }
 }
 
-fn prepare_ui_render_texture(
+fn prepare_prepare_bind_groups(
     mut commands : Commands,
     saiko_pipeline: ResMut<SaikoRenderPipeline>,
     render_targets : Query<(Entity, &SaikoRenderTarget)>,
@@ -166,6 +171,7 @@ fn prepare_ui_render_texture(
     render_device: Res<RenderDevice>,
 ) {
     for (render_target_entity, render_target) in render_targets.iter() {
+        println!("Preparing render texture");
         let Ok(prepared_bind_group) = render_target.1.as_bind_group(
             &saiko_pipeline.bind_group_layout,
             render_device.as_ref(),
@@ -175,23 +181,4 @@ fn prepare_ui_render_texture(
         
         commands.entity(render_target_entity).insert(SaikoPreparedBuffer(prepared_bind_group));
     }
-    
-    // if saiko_pipeline.bind_groups.is_none() {
-
-    //     let buffer = SaikoBuffer {
-    //         rectangles: vec![RectBuffer::default()
-    //             .with_size((100.0, 100.0))
-    //             .with_color((1.0, 0.0, 0.0, 0.5))],
-    //     };
-
-    //     let Ok(bind_group) = buffer.as_bind_group(
-    //         &saiko_pipeline.bind_group_layout,
-    //         render_device.as_ref(),
-    //         images.as_ref(),
-    //         &saiko_pipeline.fallback_image,
-    //     ) else {
-    //         return;
-    //     };
-    //     saiko_pipeline.bind_groups = Some(bind_group);
-    // }
 }
