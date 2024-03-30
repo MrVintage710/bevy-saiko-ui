@@ -105,7 +105,6 @@ impl ViewNode for SaikoRenderNode {
         
         let mut blit_pass = render_context.begin_tracked_render_pass(RenderPassDescriptor {
             label: "SaikoUI Blit Render Pass".into(),
-            // color_attachments: &[Some(view_target.get_color_attachment())],
             color_attachments: &[Some(view_target.get_color_attachment())],
             depth_stencil_attachment: None,
             timestamp_writes: None,

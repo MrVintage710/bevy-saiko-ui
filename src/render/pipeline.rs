@@ -74,6 +74,17 @@ impl FromWorld for SaikoRenderPipeline {
         let render_device = world.resource::<RenderDevice>();
 
         let bind_group_layout = SaikoBuffer::bind_group_layout(render_device);
+        
+        let blit_bind_group_layout = render_device.create_bind_group_layout(
+            "blit_bind_group_layout",
+            &BindGroupLayoutEntries::sequential(
+                ShaderStages::FRAGMENT,
+                (
+                    texture_2d_multisampled(TextureSampleType::Float { filterable: false }),
+                    sampler(SamplerBindingType::NonFiltering),
+                ),
+            ),
+        );
 
         let pipeline = RenderPipelineDescriptor {
             label: Some("SaikoUI Render Pipeline".into()),
@@ -100,19 +111,33 @@ impl FromWorld for SaikoRenderPipeline {
             depth_stencil: None,
         };
         
+        let blit_pipeline = RenderPipelineDescriptor {
+            label: Some("SaikoUI Blit Pipeline".into()),
+            layout: vec![blit_bind_group_layout.clone()],
+            vertex: fullscreen_shader_vertex_state(),
+            fragment: Some(FragmentState {
+                shader: bevy::core_pipeline::blit::BLIT_SHADER_HANDLE,
+                shader_defs: vec![],
+                entry_point: "fs_main".into(),
+                targets: vec![Some(ColorTargetState {
+                    format: TextureFormat::bevy_default(),
+                    blend: Some(BlendState::ALPHA_BLENDING),
+                    write_mask: ColorWrites::ALL,
+                })],
+            }),
+            primitive: PrimitiveState::default(),
+            multisample: MultisampleState {
+                count: 4,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+            push_constant_ranges: vec![],
+            depth_stencil: None,
+        };
+        
         // This will add the pipeline to the cache and queue it's creation
         let pipeline =  world.resource::<PipelineCache>().queue_render_pipeline(pipeline);
-        
-        let blit_bind_group_layout = render_device.create_bind_group_layout(
-            "blit_bind_group_layout",
-            &BindGroupLayoutEntries::sequential(
-                ShaderStages::FRAGMENT,
-                (
-                    texture_2d_multisampled(TextureSampleType::Float { filterable: false }),
-                    sampler(SamplerBindingType::NonFiltering),
-                ),
-            ),
-        );
+        let blit_pipeline =  world.resource::<PipelineCache>().queue_render_pipeline(blit_pipeline);
         
         //This is where I would create bind group layouts if I had them
         SaikoRenderPipeline {
