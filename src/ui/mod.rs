@@ -14,6 +14,8 @@ pub struct SaikoUiPlugin;
 impl Plugin for SaikoUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(SaikoComponentPlugin::<RectComponent>::default())
-            .register_type::<SaikoNode>();
+            .register_type::<SaikoNode>()
+            .register_type::<RectComponent>()
+        ;
     }
 }

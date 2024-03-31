@@ -13,7 +13,9 @@ use bevy::{
     render::{view::RenderLayers, Extract, RenderApp},
 };
 
-use crate::render::{buffer::SaikoBuffer, SaikoRenderTarget};
+use crate::{common::MarkSaikoUiDirty, render::{buffer::SaikoBuffer, SaikoRenderState, SaikoRenderTarget}};
+
+use super::node::SaikoNode;
 
 //==============================================================================
 //          SaikoComponent
@@ -21,6 +23,8 @@ use crate::render::{buffer::SaikoBuffer, SaikoRenderTarget};
 
 pub trait SaikoComponent: Component {
     fn render(&self, buffer: &mut SaikoBuffer);
+    
+    fn should_auto_update() -> bool { true }
 }
 
 //==============================================================================
@@ -31,6 +35,10 @@ pub struct SaikoComponentPlugin<T: SaikoComponent>(PhantomData<T>);
 
 impl<T: SaikoComponent> Plugin for SaikoComponentPlugin<T> {
     fn build(&self, app: &mut App) {
+        app
+            .add_systems(Last, component_change_detection::<T>)
+        ;
+        
         let Ok(render_app) = app.get_sub_app_mut(RenderApp) else {
             return;
         };
@@ -70,6 +78,18 @@ fn extract_components<T: SaikoComponent>(
             if on_layer && visable {
                 component.render(&mut render_target.1);
             }
+        }
+    }
+}
+
+fn component_change_detection<T: SaikoComponent>(
+    mut render_state : ResMut<SaikoRenderState>,
+    components : Query<(Ref<T>, Ref<SaikoNode>)>
+) {
+    for (component, node) in components.iter() {
+        if node.is_changed() || component.is_changed() {
+            println!("Component Changed");
+            render_state.mark_dirty();
         }
     }
 }

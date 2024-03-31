@@ -127,6 +127,10 @@ impl SaikoRenderState {
     pub fn is_dirty(&self) -> bool {
         self.is_dirty
     }
+    
+    pub fn mark_dirty(&mut self) {
+        self.is_dirty = true;
+    }
 }
 
 fn update_saiko_render_state(
