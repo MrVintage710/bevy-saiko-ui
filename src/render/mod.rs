@@ -15,10 +15,9 @@ use bevy::{
 };
 
 use crate::{common::MarkSaikoUiDirty, render::{
-    buffer::RectBuffer,
     pass::{SaikoRenderLabel, SaikoSubGraph},
     pipeline::{SaikoRenderPipeline, SaikoRenderPipelinePlugin},
-}, ui::node::SaikoNode};
+}};
 
 use self::{buffer::{SaikoBuffer, SaikoPreparedBuffer}, pass::SaikoRenderNode};
 
