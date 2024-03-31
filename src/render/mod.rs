@@ -10,16 +10,27 @@ use bevy::{
     },
     prelude::*,
     render::{
-        render_asset::RenderAssets, render_graph::{RenderGraph, RunGraphOnViewNode, ViewNodeRunner}, render_resource::AsBindGroup, renderer::RenderDevice, view::RenderLayers, Extract, Render, RenderApp, RenderSet
+        render_asset::RenderAssets,
+        render_graph::{RenderGraph, RunGraphOnViewNode, ViewNodeRunner},
+        render_resource::AsBindGroup,
+        renderer::RenderDevice,
+        view::RenderLayers,
+        Extract, Render, RenderApp, RenderSet,
     },
 };
 
-use crate::{common::MarkSaikoUiDirty, render::{
-    pass::{SaikoRenderLabel, SaikoSubGraph},
-    pipeline::{SaikoRenderPipeline, SaikoRenderPipelinePlugin},
-}};
+use crate::{
+    common::MarkSaikoUiDirty,
+    render::{
+        pass::{SaikoRenderLabel, SaikoSubGraph},
+        pipeline::{SaikoRenderPipeline, SaikoRenderPipelinePlugin},
+    },
+};
 
-use self::{buffer::{SaikoBuffer, SaikoPreparedBuffer}, pass::SaikoRenderNode};
+use self::{
+    buffer::{SaikoBuffer, SaikoPreparedBuffer},
+    pass::SaikoRenderNode,
+};
 
 //==============================================================================
 //  This is the render module for Saiko UI. It has been inspired by the
@@ -49,21 +60,24 @@ impl Plugin for SaikoRenderPlugin {
         load_internal_asset!(app, BLIT_SHADER_HANDLE, "blit.wgsl", Shader::from_wgsl);
 
         app.init_resource::<SaikoRenderState>();
-        
-        app
-            .add_plugins(SaikoRenderPipelinePlugin)
-            
+
+        app.add_plugins(SaikoRenderPipelinePlugin)
             .add_systems(First, reset_saiko_render_state)
-            .add_systems(Last, update_saiko_render_state)
-        ;
+            .add_systems(Last, update_saiko_render_state);
 
         // We need to get the render app from the main app
         let Ok(render_app) = app.get_sub_app_mut(RenderApp) else {
             return;
         };
 
-        render_app.add_systems(ExtractSchedule, (extract_cameras_for_render, apply_deferred));
-        render_app.add_systems(Render, prepare_prepare_bind_groups.in_set(RenderSet::PrepareResources));
+        render_app.add_systems(
+            ExtractSchedule,
+            (extract_cameras_for_render, apply_deferred),
+        );
+        render_app.add_systems(
+            Render,
+            prepare_prepare_bind_groups.in_set(RenderSet::PrepareResources),
+        );
 
         let ui_graph_2d = get_ui_graph(render_app);
         let ui_graph_3d = get_ui_graph(render_app);
@@ -99,15 +113,13 @@ fn get_ui_graph(render_app: &mut App) -> RenderGraph {
 //==============================================================================
 
 #[derive(Resource)]
-pub struct SaikoRenderState{
+pub struct SaikoRenderState {
     is_dirty: bool,
 }
 
 impl Default for SaikoRenderState {
     fn default() -> Self {
-        Self {
-            is_dirty: true,
-        }
+        Self { is_dirty: true }
     }
 }
 
@@ -118,17 +130,15 @@ impl SaikoRenderState {
 }
 
 fn update_saiko_render_state(
-    mut state : ResMut<SaikoRenderState>,
-    dirty : EventReader<MarkSaikoUiDirty>
+    mut state: ResMut<SaikoRenderState>,
+    dirty: EventReader<MarkSaikoUiDirty>,
 ) {
     if !dirty.is_empty() {
         state.is_dirty = true;
     }
 }
 
-fn reset_saiko_render_state(
-    mut state : ResMut<SaikoRenderState>
-) {
+fn reset_saiko_render_state(mut state: ResMut<SaikoRenderState>) {
     state.is_dirty = false;
 }
 
@@ -144,14 +154,10 @@ pub struct SaikoRenderTarget(pub Option<RenderLayers>, pub SaikoBuffer);
 //==============================================================================
 
 fn extract_cameras_for_render(
-    mut commands : Commands,
-    mut has_initialized : Local<bool>,
-    cameras : Extract<
-        Query<(Entity, Option<&RenderLayers>), With<Camera>>
-    >,
-    ui_dirty : Extract<
-        Res<SaikoRenderState>
-    >,
+    mut commands: Commands,
+    mut has_initialized: Local<bool>,
+    cameras: Extract<Query<(Entity, Option<&RenderLayers>), With<Camera>>>,
+    ui_dirty: Extract<Res<SaikoRenderState>>,
 ) {
     if ui_dirty.is_dirty() || !*has_initialized {
         for (entity, render_layers) in cameras.iter() {
@@ -159,15 +165,15 @@ fn extract_cameras_for_render(
             let render_layers = render_layers.map(|value| value.clone());
             cam_entity.insert(SaikoRenderTarget(render_layers, SaikoBuffer::default()));
         }
-        
+
         *has_initialized = true;
     }
 }
 
 fn prepare_prepare_bind_groups(
-    mut commands : Commands,
+    mut commands: Commands,
     saiko_pipeline: ResMut<SaikoRenderPipeline>,
-    render_targets : Query<(Entity, &SaikoRenderTarget)>,
+    render_targets: Query<(Entity, &SaikoRenderTarget)>,
     images: Res<RenderAssets<Image>>,
     render_device: Res<RenderDevice>,
 ) {
@@ -178,8 +184,12 @@ fn prepare_prepare_bind_groups(
             render_device.as_ref(),
             images.as_ref(),
             &saiko_pipeline.fallback_image,
-        ) else { continue };
-        
-        commands.entity(render_target_entity).insert(SaikoPreparedBuffer(prepared_bind_group));
+        ) else {
+            continue;
+        };
+
+        commands
+            .entity(render_target_entity)
+            .insert(SaikoPreparedBuffer(prepared_bind_group));
     }
 }

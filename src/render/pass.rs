@@ -29,7 +29,7 @@ impl ViewNode for SaikoRenderNode {
     type ViewQuery = (
         Entity,
         &'static ViewTarget,
-        Option<&'static SaikoPreparedBuffer>
+        Option<&'static SaikoPreparedBuffer>,
     );
 
     fn run<'w>(
@@ -53,14 +53,17 @@ impl ViewNode for SaikoRenderNode {
         else {
             return Ok(());
         };
-        
+
         let Some(blit_pipeline) =
             pipeline_cache.get_render_pipeline(saiko_pipeline_resource.blit_pipeline)
         else {
             return Ok(());
         };
-        
-        let (render_texture, _, _) = saiko_pipeline_resource.render_textures.get(&entity).unwrap();
+
+        let (render_texture, _, _) = saiko_pipeline_resource
+            .render_textures
+            .get(&entity)
+            .unwrap();
 
         //If the shaping data has been loaded into the bind group, render it
         // if let Some(prepared_bind_group) = &saiko_pipeline_resource.bind_groups {
@@ -73,13 +76,11 @@ impl ViewNode for SaikoRenderNode {
             let mut render_pass = render_context.begin_tracked_render_pass(RenderPassDescriptor {
                 label: "SaikoUI Render Pass".into(),
                 // color_attachments: &[Some(view_target.get_color_attachment())],
-                color_attachments: &[
-                    Some(RenderPassColorAttachment { 
-                        view: render_texture, 
-                        resolve_target: None, 
-                        ops: Operations::default() 
-                    })
-                ],
+                color_attachments: &[Some(RenderPassColorAttachment {
+                    view: render_texture,
+                    resolve_target: None,
+                    ops: Operations::default(),
+                })],
                 depth_stencil_attachment: None,
                 timestamp_writes: None,
                 occlusion_query_set: None,
@@ -92,15 +93,15 @@ impl ViewNode for SaikoRenderNode {
             //Send it baby!
             render_pass.draw(0..3, 0..1);
         }
-        
+
         let blit_pipeline_resource = world.resource::<BlitPipeline>();
-        
+
         let blit_bind_group = render_context.render_device().create_bind_group(
-            None, 
-            &saiko_pipeline_resource.blit_bind_group_layout, 
-            &BindGroupEntries::sequential((render_texture, &blit_pipeline_resource.sampler))
+            None,
+            &saiko_pipeline_resource.blit_bind_group_layout,
+            &BindGroupEntries::sequential((render_texture, &blit_pipeline_resource.sampler)),
         );
-        
+
         let mut blit_pass = render_context.begin_tracked_render_pass(RenderPassDescriptor {
             label: "SaikoUI Blit Render Pass".into(),
             color_attachments: &[Some(view_target.get_unsampled_color_attachment())],
@@ -108,12 +109,12 @@ impl ViewNode for SaikoRenderNode {
             timestamp_writes: None,
             occlusion_query_set: None,
         });
-        
+
         blit_pass.set_render_pipeline(blit_pipeline);
         blit_pass.set_bind_group(0, &blit_bind_group, &[]);
-        
+
         blit_pass.draw(0..3, 0..1);
-        
+
         // let bind_group = &prepared_buffer.0.bind_group;
 
         // //Create the render pass. This is what will render the final result.
@@ -121,10 +122,10 @@ impl ViewNode for SaikoRenderNode {
         //     label: "SaikoUI Render Pass".into(),
         //     // color_attachments: &[Some(view_target.get_color_attachment())],
         //     color_attachments: &[
-        //         Some(RenderPassColorAttachment { 
-        //             view: render_texture, 
-        //             resolve_target: None, 
-        //             ops: Operations::default() 
+        //         Some(RenderPassColorAttachment {
+        //             view: render_texture,
+        //             resolve_target: None,
+        //             ops: Operations::default()
         //         })
         //     ],
         //     depth_stencil_attachment: None,

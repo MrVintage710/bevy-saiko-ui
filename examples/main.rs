@@ -1,6 +1,10 @@
 use bevy::{prelude::*, window::close_on_esc};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_saiko_ui::{common::{bounds::Bounds, MarkSaikoUiDirty}, ui::{component::rect::RectComponent, node::SaikoNode, position::RelativePosition}, SaikoUiPlugin};
+use bevy_saiko_ui::{
+    common::{bounds::Bounds, MarkSaikoUiDirty},
+    ui::{component::rect::RectComponent, node::SaikoNode, position::RelativePosition},
+    SaikoUiPlugin,
+};
 
 pub fn main() {
     let mut app = App::new();
@@ -50,15 +54,13 @@ fn setup(
         transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
-    
+
     commands.spawn((
         SaikoNode::new(RelativePosition::Relative(Bounds::default())),
-        RectComponent::default()
+        RectComponent::default(),
     ));
 }
 
-fn update(
-    mut event_writer: EventWriter<MarkSaikoUiDirty>,
-) {
+fn update(mut event_writer: EventWriter<MarkSaikoUiDirty>) {
     // event_writer.send(MarkSaikoUiDirty);
 }

@@ -1,5 +1,5 @@
-pub mod render;
 pub mod common;
+pub mod render;
 pub mod ui;
 
 use bevy::prelude::*;

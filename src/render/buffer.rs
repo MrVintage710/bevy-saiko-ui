@@ -1,5 +1,7 @@
 use bevy::{
-    prelude::*, math::{Vec2, Vec3, Vec4}, render::render_resource::{AsBindGroup, PreparedBindGroup, ShaderType}
+    math::{Vec2, Vec3, Vec4},
+    prelude::*,
+    render::render_resource::{AsBindGroup, PreparedBindGroup, ShaderType},
 };
 
 //==============================================================================
@@ -13,7 +15,7 @@ pub struct SaikoBuffer {
 }
 
 impl SaikoBuffer {
-    pub fn push_rect(&mut self, rect : impl Into<RectBuffer>) {
+    pub fn push_rect(&mut self, rect: impl Into<RectBuffer>) {
         self.rectangles.push(rect.into())
     }
 }

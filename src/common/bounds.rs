@@ -1,5 +1,5 @@
 //==============================================================================
-//  This is the Bounds Plugin. SaikoBounds is a struct that is the core for 
+//  This is the Bounds Plugin. SaikoBounds is a struct that is the core for
 //  supplying the renderer where to render certain UI. The shaping and sdf's
 //  are derived from a ui's bounds.
 //==============================================================================
@@ -21,7 +21,6 @@ pub struct Bounds {
     /// The z_index of the bounds. This is used to determine the rendering order.
     pub z_index: i32,
 }
-
 
 impl Bounds {
     pub fn new(center: Vec2, size: Vec2, z_index: i32) -> Self {

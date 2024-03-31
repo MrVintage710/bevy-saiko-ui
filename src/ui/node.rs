@@ -16,15 +16,15 @@ use super::position::RelativePosition;
 
 #[derive(Component, Reflect)]
 pub struct SaikoNode {
-    bounds : Bounds,
-    position : RelativePosition
+    bounds: Bounds,
+    position: RelativePosition,
 }
 
 impl SaikoNode {
-    pub fn new(position : RelativePosition) -> Self {
+    pub fn new(position: RelativePosition) -> Self {
         SaikoNode {
-            bounds : Bounds::default(),
-            position
+            bounds: Bounds::default(),
+            position,
         }
     }
 }
@@ -32,4 +32,3 @@ impl SaikoNode {
 //==============================================================================
 //          SaikoNode Systems
 //==============================================================================
-
