@@ -14,7 +14,7 @@ use bevy::{
         render_graph::{RenderGraph, RunGraphOnViewNode, ViewNodeRunner},
         render_resource::AsBindGroup,
         renderer::RenderDevice,
-        view::RenderLayers,
+        view::{RenderLayers, ViewTarget},
         Extract, Render, RenderApp, RenderSet,
     },
 };
@@ -172,13 +172,15 @@ fn extract_cameras_for_render(
 
 fn prepare_prepare_bind_groups(
     mut commands: Commands,
+    mut render_targets: Query<(Entity, &mut SaikoRenderTarget, &ViewTarget)>,
     saiko_pipeline: ResMut<SaikoRenderPipeline>,
-    render_targets: Query<(Entity, &SaikoRenderTarget)>,
     images: Res<RenderAssets<Image>>,
     render_device: Res<RenderDevice>,
 ) {
-    for (render_target_entity, render_target) in render_targets.iter() {
+    for (render_target_entity, mut render_target, view_target) in render_targets.iter_mut() {
         println!("Preparing render texture");
+        render_target.1.screen_size = Vec2::new(view_target.main_texture().width() as f32, view_target.main_texture().height() as f32);
+        
         let Ok(prepared_bind_group) = render_target.1.as_bind_group(
             &saiko_pipeline.bind_group_layout,
             render_device.as_ref(),
@@ -187,7 +189,7 @@ fn prepare_prepare_bind_groups(
         ) else {
             continue;
         };
-
+        
         commands
             .entity(render_target_entity)
             .insert(SaikoPreparedBuffer(prepared_bind_group));

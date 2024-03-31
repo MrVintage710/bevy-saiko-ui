@@ -1,4 +1,5 @@
 use bevy::{
+    ecs::storage,
     math::{Vec2, Vec3, Vec4},
     prelude::*,
     render::render_resource::{AsBindGroup, PreparedBindGroup, ShaderType},
@@ -12,6 +13,8 @@ use bevy::{
 pub struct SaikoBuffer {
     #[storage(0, read_only)]
     pub rectangles: Vec<RectBuffer>,
+    #[uniform(1)]
+    pub screen_size: Vec2,
 }
 
 impl SaikoBuffer {

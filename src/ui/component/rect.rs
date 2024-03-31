@@ -23,9 +23,9 @@ impl SaikoComponent for RectComponent {
         buffer.push_rect(
             RectBuffer::default()
                 .with_position(Vec3::new(0.0, 0.0, 0.0))
-                .with_size(Vec2::new(10.0, 10.0))
+                .with_size(Vec2::new(250.0, 250.0))
                 .with_color((0.0, 0.0, 1.0, 0.5))
-                .with_corners(Vec4::new(0.0, 0.0, 0.0, 0.0)),
+                .with_corners(Vec4::new(100.0, 100.0, 100.0, 100.0)),
         );
     }
 }

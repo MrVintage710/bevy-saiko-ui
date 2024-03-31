@@ -8,10 +8,7 @@
 
 use bevy::prelude::*;
 
-use crate::common::{
-    bounds::Bounds,
-    value::{Percent, Value},
-};
+use crate::common::{bounds::Bounds, value::Percent};
 
 //==============================================================================
 //          UiRelativePosition
