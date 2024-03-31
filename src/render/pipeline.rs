@@ -6,7 +6,7 @@ use bevy::{
     }, utils::HashMap
 };
 
-use super::{buffer::SaikoBuffer, SAIKO_SHADER_HANDLE};
+use super::{buffer::SaikoBuffer, BLIT_SHADER_HANDLE, SAIKO_SHADER_HANDLE};
 
 //==============================================================================
 //             RenderPipelinePlugin
@@ -80,7 +80,7 @@ impl FromWorld for SaikoRenderPipeline {
             &BindGroupLayoutEntries::sequential(
                 ShaderStages::FRAGMENT,
                 (
-                    texture_2d_multisampled(TextureSampleType::Float { filterable: false }),
+                    texture_2d(TextureSampleType::Float { filterable: false }),
                     sampler(SamplerBindingType::NonFiltering),
                 ),
             ),
@@ -102,11 +102,7 @@ impl FromWorld for SaikoRenderPipeline {
                 })],
             }),
             primitive: PrimitiveState::default(),
-            multisample: MultisampleState {
-                count: 4,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
+            multisample: MultisampleState::default(),
             push_constant_ranges: vec![],
             depth_stencil: None,
         };
@@ -116,7 +112,7 @@ impl FromWorld for SaikoRenderPipeline {
             layout: vec![blit_bind_group_layout.clone()],
             vertex: fullscreen_shader_vertex_state(),
             fragment: Some(FragmentState {
-                shader: bevy::core_pipeline::blit::BLIT_SHADER_HANDLE,
+                shader: BLIT_SHADER_HANDLE,
                 shader_defs: vec![],
                 entry_point: "fs_main".into(),
                 targets: vec![Some(ColorTargetState {
@@ -126,11 +122,7 @@ impl FromWorld for SaikoRenderPipeline {
                 })],
             }),
             primitive: PrimitiveState::default(),
-            multisample: MultisampleState {
-                count: 4,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
+            multisample: MultisampleState::default(),
             push_constant_ranges: vec![],
             depth_stencil: None,
         };
@@ -190,7 +182,7 @@ fn update_pipeline_textures (
                 depth_or_array_layers: 1,
             }, 
             mip_level_count: 1,
-            sample_count: 4,
+            sample_count: 1,
             dimension: TextureDimension::D2,
             format: TextureFormat::bevy_default(),
             usage: TextureUsages::TEXTURE_BINDING | TextureUsages::RENDER_ATTACHMENT,

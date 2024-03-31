@@ -36,6 +36,7 @@ use self::{buffer::{SaikoBuffer, SaikoPreparedBuffer}, pass::SaikoRenderNode};
 //==============================================================================
 
 pub const SAIKO_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(11079037277321826659);
+pub const BLIT_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(11079030077321896629);
 
 //==============================================================================
 //             SaikoRenderPlugin
@@ -46,6 +47,7 @@ pub struct SaikoRenderPlugin;
 impl Plugin for SaikoRenderPlugin {
     fn build(&self, app: &mut App) {
         load_internal_asset!(app, SAIKO_SHADER_HANDLE, "saiko.wgsl", Shader::from_wgsl);
+        load_internal_asset!(app, BLIT_SHADER_HANDLE, "blit.wgsl", Shader::from_wgsl);
 
         app.init_resource::<SaikoRenderState>();
         
