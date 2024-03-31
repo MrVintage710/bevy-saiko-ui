@@ -87,7 +87,7 @@ fn component_change_detection<T: SaikoComponent>(
     components : Query<(Ref<T>, Ref<SaikoNode>)>
 ) {
     for (component, node) in components.iter() {
-        if node.is_changed() || component.is_changed() {
+        if T::should_auto_update() && (node.is_changed() || component.is_changed()) {
             println!("Component Changed");
             render_state.mark_dirty();
         }
