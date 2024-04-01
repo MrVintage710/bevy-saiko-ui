@@ -13,19 +13,30 @@ use super::SaikoComponent;
 //          SaikoRectComponent
 //==============================================================================
 
-#[derive(Component, Reflect, Default)]
+#[derive(Component, Reflect)]
 pub struct RectComponent {
     size: Vec2,
+    border_radius: Vec4,
+    border_thickness: f32,
+}
+
+impl Default for RectComponent {
+    fn default() -> Self {
+        RectComponent {
+            size: Vec2::new(100.0, 100.0),
+            border_radius: Vec4::new(10.0, 10.0, 10.0, 10.0),
+            border_thickness: 5.0,
+        }
+    }
 }
 
 impl SaikoComponent for RectComponent {
     fn render(&self, buffer: &mut SaikoBuffer) {
         buffer.push_rect(
             RectBuffer::default()
-                .with_position(Vec3::new(0.0, 0.0, 0.0))
+                .with_position(Vec2::new(0.0, 0.0))
                 .with_size(self.size)
-                .with_color((0.0, 0.0, 1.0, 0.5))
-                .with_corners(Vec4::new(100.0, 100.0, 100.0, 100.0)),
+                .with_color(Color::MAROON)
         );
     }
 }

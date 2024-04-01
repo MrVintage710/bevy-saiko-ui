@@ -68,27 +68,6 @@ pub struct SaikoRenderPipeline {
 
 impl FromWorld for SaikoRenderPipeline {
     fn from_world(world: &mut World) -> Self {
-        let blit_pipeline = BlitPipeline::from_world(world);
-
-        let blit_pipeline = {
-            let mut state: SystemState<(
-                Res<PipelineCache>,
-                ResMut<SpecializedRenderPipelines<BlitPipeline>>,
-            )> = SystemState::new(world);
-
-            let (pipeline_cache, mut blit_pipelines) = state.get_mut(world);
-
-            blit_pipelines.specialize(
-                &pipeline_cache,
-                &blit_pipeline,
-                BlitPipelineKey {
-                    texture_format: TextureFormat::bevy_default(),
-                    blend_state: Some(BlendState::ALPHA_BLENDING),
-                    samples: 4,
-                },
-            )
-        };
-
         let fallback_image = FallbackImage::from_world(world);
         let render_device = world.resource::<RenderDevice>();
 
@@ -177,7 +156,7 @@ fn update_pipeline_textures(
     view_targets: Query<(Entity, &ViewTarget)>,
 ) {
     for (view_target_entity, view_target) in view_targets.iter() {
-        let (width, height) = pipeline
+        let (current_width, current_height) = pipeline
             .render_textures
             .get(&view_target_entity)
             .map(|(_, width, height)| (*width, *height))
@@ -185,30 +164,23 @@ fn update_pipeline_textures(
                 view_target.main_texture().width(),
                 view_target.main_texture().height(),
             ));
-
-        if width == view_target.main_texture().width()
-            && height == view_target.main_texture().height()
+        
+        if current_width == view_target.main_texture().width()
+            && current_height == view_target.main_texture().height()
             && pipeline.render_textures.contains_key(&view_target_entity)
         {
             continue;
         }
 
         println!("Updating Pipeline Render Textures");
-        // let (target_x, target_y) = if let Some((_, width, height)) = pipeline.render_textures.get(&view_target_entity) {
-        //     println!("Checking: {width} - {height}, {} - {} | {} {}", view_target.main_texture().width(), view_target.main_texture().height(), view_target.main_texture().width() == *width, view_target.main_texture().height() == *height);
-        //     if view_target.main_texture().width() == *width && view_target.main_texture().height() == *height {
-        //         continue;
-        //     }
-        //     (view_target.main_texture().width(), view_target.main_texture().height())
-        // } else {
-        //     (view_target.main_texture().width(), view_target.main_texture().height())
-        // };
+        println!("Texture Width : {} | {}", view_target.main_texture().width(), current_width);
+        println!("Texture Height : {} | {}", view_target.main_texture().height(), current_height);
 
         let texture = render_device.create_texture(&TextureDescriptor {
             label: Some(format!("SaikoUI Render Texture {:?}", view_target_entity).as_str()),
             size: Extent3d {
-                width,
-                height,
+                width: view_target.main_texture().width(),
+                height: view_target.main_texture().height(),
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
@@ -226,6 +198,8 @@ fn update_pipeline_textures(
 
         pipeline
             .render_textures
-            .insert(view_target_entity, (texture_view, width, height));
+            .insert(view_target_entity, (texture_view, view_target.main_texture().width(), view_target.main_texture().height()));
+        
+        println!("Render Textures: {}", pipeline.render_textures.len());
     }
 }

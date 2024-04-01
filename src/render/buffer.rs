@@ -31,20 +31,20 @@ impl SaikoBuffer {
 pub struct SaikoPreparedBuffer(pub PreparedBindGroup<()>);
 
 //==============================================================================
-//             SaikoRectInstance
+//             RectBuffer
 //==============================================================================
 
 #[derive(ShaderType, Default)]
 pub struct RectBuffer {
-    #[size(16)]
-    pub position: Vec3,
+    pub position: Vec2,
     pub size: Vec2,
-    pub color: Vec4,
-    pub corners: Vec4,
+    pub z_idex: f32,
+    pub border_style: BorderStyleBuffer,
+    pub fill_style: FillStyleBuffer,
 }
 
 impl RectBuffer {
-    pub fn with_position(mut self, position: impl Into<Vec3>) -> Self {
+    pub fn with_position(mut self, position: impl Into<Vec2>) -> Self {
         self.position = position.into();
         self
     }
@@ -53,18 +53,62 @@ impl RectBuffer {
         self.size = size.into();
         self
     }
-
-    pub fn with_color(mut self, color: impl Into<Vec4>) -> Self {
-        self.color = color.into();
+    
+    pub fn with_color(mut self, color : impl Into<Color>) -> Self {
+        self.fill_style.fill_color = color.into();
         self
     }
-
-    pub fn with_corners(mut self, corners: impl Into<Vec4>) -> Self {
-        self.corners = corners.into();
+    
+    pub fn with_border_color(mut self, color : impl Into<Color>) -> Self {
+        self.border_style.border_color = color.into();
+        self
+    }
+    
+    pub fn with_border_radius(mut self, radius : impl Into<Vec4>) -> Self {
+        self.border_style.border_radius = radius.into();
+        self
+    }
+    
+    pub fn with_border_width(mut self, width : f32) -> Self {
+        self.border_style.border_width = width;
         self
     }
 }
 
 //==============================================================================
-//             IntoStorageBuffer
+//             BorderStyleBuffer
 //==============================================================================
+
+#[derive(ShaderType)]
+pub struct BorderStyleBuffer {
+    pub border_color: Color,
+    pub border_radius: Vec4,
+    pub border_width: f32,
+}
+
+impl Default for BorderStyleBuffer {
+    fn default() -> Self {
+        BorderStyleBuffer {
+            border_color: Color::BLACK,
+            border_radius: Vec4::ZERO,
+            border_width: 5.0,
+        }
+    }
+}
+
+//==============================================================================
+//             FillStyleBuffer
+//==============================================================================
+
+#[derive(ShaderType)]
+pub struct FillStyleBuffer {
+    pub fill_color: Color,
+}
+
+impl Default for FillStyleBuffer {
+    fn default() -> Self {
+        FillStyleBuffer {
+            fill_color: Color::WHITE,
+        }
+    }
+}

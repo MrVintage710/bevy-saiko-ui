@@ -16,7 +16,7 @@ use bevy::{
         renderer::RenderDevice,
         view::{RenderLayers, ViewTarget},
         Extract, Render, RenderApp, RenderSet,
-    },
+    }, window::WindowResized,
 };
 
 use crate::{
@@ -46,6 +46,7 @@ use self::{
 //==============================================================================
 
 pub const SAIKO_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(11079037277321826659);
+pub const SAIKO_STYLE_HANDLE: Handle<Shader> = Handle::weak_from_u128(12382237267321826659);
 pub const BLIT_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(11079030077321896629);
 
 //==============================================================================
@@ -57,6 +58,7 @@ pub struct SaikoRenderPlugin;
 impl Plugin for SaikoRenderPlugin {
     fn build(&self, app: &mut App) {
         load_internal_asset!(app, SAIKO_SHADER_HANDLE, "saiko.wgsl", Shader::from_wgsl);
+        load_internal_asset!(app, SAIKO_STYLE_HANDLE, "style.wgsl", Shader::from_wgsl);
         load_internal_asset!(app, BLIT_SHADER_HANDLE, "blit.wgsl", Shader::from_wgsl);
 
         app.init_resource::<SaikoRenderState>();
@@ -74,6 +76,7 @@ impl Plugin for SaikoRenderPlugin {
             ExtractSchedule,
             (extract_cameras_for_render, apply_deferred),
         );
+        
         render_app.add_systems(
             Render,
             prepare_prepare_bind_groups.in_set(RenderSet::PrepareResources),
@@ -136,8 +139,9 @@ impl SaikoRenderState {
 fn update_saiko_render_state(
     mut state: ResMut<SaikoRenderState>,
     dirty: EventReader<MarkSaikoUiDirty>,
+    window_resized_event : EventReader<WindowResized>
 ) {
-    if !dirty.is_empty() {
+    if !dirty.is_empty() || !window_resized_event.is_empty() {
         state.is_dirty = true;
     }
 }

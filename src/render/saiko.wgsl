@@ -1,19 +1,21 @@
+//#import saiko_ui::style::{BorderStyle, FillStyle};
+
+struct BorderStyle {
+    border_color : vec4<f32>,
+    border_radius : vec4<f32>,
+    border_width : f32,
+}
+
+struct FillStyle {
+    fill_color : vec4<f32>,
+}
 
 struct Rect {
-    position: vec3<f32>,
+    position: vec2<f32>,
     size: vec2<f32>,
-    color: vec4<f32>,
-    corners : vec4<f32>,
-};
-
-struct VertexInput {
-    @location(0) position: vec3<f32>,
-    @location(1) size: vec2<f32>,
-    @location(2) color: vec3<f32>,
-};
-
-struct VertexOutput {
-    test : f32
+    z_index: f32,
+    border_style: BorderStyle,
+    fill_style: FillStyle,
 };
 
 @group(0) @binding(0)
@@ -28,6 +30,7 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     var normalized_uv = uv - 0.5;
     var point = resolution * uv;
+    point = point - (resolution * 0.5);
     
     var current_z = 0.0;
     var final_color = vec4<f32>(0.0, 0.0, 0.0, 0.0);
@@ -36,14 +39,17 @@ fn fragment(
         var curr_rect = rect[i];
         var distance = rounded_box_sdf(point, curr_rect);
         final_color = select (
-            curr_rect.color,
+            curr_rect.fill_style.fill_color,
             final_color,
             distance > 0.0
         );
+        final_color = select (
+            final_color,
+            curr_rect.border_style.border_color,
+            abs(distance) < curr_rect.border_style.border_width / 2.0
+        );
     }
-    
-    // return vec4<f32>((point.x % 10.0) / 10.0, (point.y % 10.0) / 10.0, 0.0, 1.0);
-    
+        
     return final_color;
 }
 
@@ -53,17 +59,9 @@ fn box_sdf(p : vec2<f32>, bounds : vec2<f32>) -> f32 {
 }
 
 fn rounded_box_sdf(p : vec2<f32>, rect : Rect) -> f32 {
-    var r = rect.corners.xy;
-    r = select(rect.corners.xy, rect.corners.zw, p.x > 0.0);
+    var r = rect.border_style.border_radius.xy;
+    r = select(rect.border_style.border_radius.xy, rect.border_style.border_radius.zw, p.x > 0.0);
     r = select(r, r.yy, p.y > 0.0);
     var q = abs(p) - rect.size + r.x;
     return min(max(q.x, q.y), 0.0) + length(max(q, vec2<f32>(0.0, 0.0))) - r.x;
 }
-
-// float sdRoundedBox( in vec2 p, in vec2 b, in vec4 r )
-// {
-//     r.xy = (p.x>0.0)?r.xy : r.zw;
-//     r.x  = (p.y>0.0)?r.x  : r.y;
-//     vec2 q = abs(p)-b+r.x;
-//     return min(max(q.x,q.y),0.0) + length(max(q,0.0)) - r.x;
-// }
