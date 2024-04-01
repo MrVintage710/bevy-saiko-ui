@@ -35,7 +35,7 @@ fn fragment(
     var current_z = 0.0;
     var final_color = vec4<f32>(0.0, 0.0, 0.0, 0.0);
     
-    for (var i = 0; i < i32(arrayLength( &rect )); i++) {
+    for (var i = 0; i < i32(arrayLength(&rect)); i++) {
         var curr_rect = rect[i];
         var distance = rounded_box_sdf(point, curr_rect);
         final_color = select (
@@ -59,9 +59,9 @@ fn box_sdf(p : vec2<f32>, bounds : vec2<f32>) -> f32 {
 }
 
 fn rounded_box_sdf(p : vec2<f32>, rect : Rect) -> f32 {
-    var r = rect.border_style.border_radius.xy;
-    r = select(rect.border_style.border_radius.xy, rect.border_style.border_radius.zw, p.x > 0.0);
+    var r = select(rect.border_style.border_radius.xy, rect.border_style.border_radius.zw, p.x > 0.0);
     r = select(r, r.yy, p.y > 0.0);
+    r = min(r, rect.size);
     var q = abs(p) - rect.size + r.x;
     return min(max(q.x, q.y), 0.0) + length(max(q, vec2<f32>(0.0, 0.0))) - r.x;
 }

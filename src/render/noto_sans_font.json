@@ -101,6 +101,6 @@
     "|":{"x":0,"y":0,"width":15,"height":45,"originX":-2,"originY":31,"advance":17},
     "}":{"x":155,"y":0,"width":23,"height":41,"originX":5,"originY":29,"advance":12},
     "~":{"x":293,"y":152,"width":28,"height":17,"originX":5,"originY":20,"advance":18},
-    "�":{"x":35,"y":0,"width":42,"height":42,"originX":5,"originY":31,"advance":32}
+    "nil":{"x":35,"y":0,"width":42,"height":42,"originX":5,"originY":31,"advance":32}
   }
 }
