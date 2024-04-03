@@ -4,7 +4,7 @@
 //  are derived from a ui's bounds.
 //==============================================================================
 
-use bevy::prelude::*;
+use bevy::{prelude::*, render::render_resource::ShaderType};
 
 //==============================================================================
 //          SaikoBounds struct
@@ -12,7 +12,7 @@ use bevy::prelude::*;
 
 /// SaikoBounds describes an Rectagul that is axis aligned that determines
 /// the bounds of a UI element.
-#[derive(Reflect, Default)]
+#[derive(ShaderType, Reflect, Default, Clone, Copy, Debug)]
 pub struct Bounds {
     /// The center of the bounds.
     pub center: Vec2,

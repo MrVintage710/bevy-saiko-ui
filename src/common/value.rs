@@ -5,19 +5,28 @@
 
 use std::ops::{Deref, DerefMut};
 
-use bevy::prelude::*;
+use bevy::{ecs::reflect, prelude::*};
 
 //==============================================================================
 //          Value Enum
 //==============================================================================
 
 /// Value is an enum that is used to determine the type of value that is being used.
-#[derive(Reflect)]
+#[derive(Reflect, Clone, Copy)]
+#[reflect(Default)]
 pub enum Value {
     /// Pixel value with support for subpixel values.
+    #[reflect(default)]
     Px(f32),
     /// Percentage value.
+    #[reflect(default)]
     Percent(Percent),
+}
+
+impl Default for Value {
+    fn default() -> Self {
+        Value::Px(0.0)
+    }
 }
 
 impl Value {
@@ -45,7 +54,8 @@ impl From<f32> for Value {
 //          Percent
 //==============================================================================
 
-#[derive(Reflect, Default)]
+#[derive(Reflect, Default, Clone, Copy)]
+#[reflect(Default)]
 pub struct Percent(f32);
 
 impl Percent {
@@ -79,7 +89,7 @@ impl DerefMut for Percent {
 
 impl From<f32> for Percent {
     fn from(f: f32) -> Self {
-        Percent(f)
+        Percent::new(f)
     }
 }
 

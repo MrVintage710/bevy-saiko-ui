@@ -115,31 +115,6 @@ impl ViewNode for SaikoRenderNode {
 
         blit_pass.draw(0..3, 0..1);
 
-        // let bind_group = &prepared_buffer.0.bind_group;
-
-        // //Create the render pass. This is what will render the final result.
-        // let mut render_pass = render_context.begin_tracked_render_pass(RenderPassDescriptor {
-        //     label: "SaikoUI Render Pass".into(),
-        //     // color_attachments: &[Some(view_target.get_color_attachment())],
-        //     color_attachments: &[
-        //         Some(RenderPassColorAttachment {
-        //             view: render_texture,
-        //             resolve_target: None,
-        //             ops: Operations::default()
-        //         })
-        //     ],
-        //     depth_stencil_attachment: None,
-        //     timestamp_writes: None,
-        //     occlusion_query_set: None,
-        // });
-
-        // //Set the pipeline to be rendered and attach the bind group
-        // render_pass.set_render_pipeline(saiko_pipeline);
-        // render_pass.set_bind_group(0, bind_group, &[]);
-
-        // //Send it baby!
-        // render_pass.draw(0..3, 0..1);
-
         Ok(())
     }
 }

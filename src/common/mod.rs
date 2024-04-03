@@ -1,5 +1,6 @@
 pub mod bounds;
 pub mod value;
+pub mod util;
 
 use bevy::prelude::*;
 

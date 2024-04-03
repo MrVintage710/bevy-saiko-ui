@@ -5,6 +5,8 @@ use bevy::{
     render::render_resource::{AsBindGroup, PreparedBindGroup, ShaderType},
 };
 
+use crate::common::bounds::Bounds;
+
 //==============================================================================
 //             Saikobuffer
 //==============================================================================
@@ -36,21 +38,19 @@ pub struct SaikoPreparedBuffer(pub PreparedBindGroup<()>);
 
 #[derive(ShaderType, Default)]
 pub struct RectBuffer {
-    pub position: Vec2,
-    pub size: Vec2,
-    pub z_idex: f32,
+    pub bound : Bounds,
     pub border_style: BorderStyleBuffer,
     pub fill_style: FillStyleBuffer,
 }
 
 impl RectBuffer {
     pub fn with_position(mut self, position: impl Into<Vec2>) -> Self {
-        self.position = position.into();
+        self.bound.center = position.into();
         self
     }
 
     pub fn with_size(mut self, size: impl Into<Vec2>) -> Self {
-        self.size = size.into();
+        self.bound.size = size.into();
         self
     }
     
@@ -79,7 +79,7 @@ impl RectBuffer {
 //             BorderStyleBuffer
 //==============================================================================
 
-#[derive(ShaderType)]
+#[derive(ShaderType, Clone, Copy)]
 pub struct BorderStyleBuffer {
     pub border_color: Color,
     pub border_radius: Vec4,
@@ -100,7 +100,7 @@ impl Default for BorderStyleBuffer {
 //             FillStyleBuffer
 //==============================================================================
 
-#[derive(ShaderType)]
+#[derive(ShaderType, Clone, Copy)]
 pub struct FillStyleBuffer {
     pub fill_color: Color,
 }

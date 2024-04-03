@@ -10,10 +10,14 @@ struct FillStyle {
     fill_color : vec4<f32>,
 }
 
+struct Bound {
+    center : vec2<f32>,
+    size : vec2<f32>,
+    z_index : f32,
+}
+
 struct Rect {
-    position: vec2<f32>,
-    size: vec2<f32>,
-    z_index: f32,
+    bound : Bound,
     border_style: BorderStyle,
     fill_style: FillStyle,
 };
@@ -58,10 +62,11 @@ fn box_sdf(p : vec2<f32>, bounds : vec2<f32>) -> f32 {
     return length(max(d, vec2<f32>(0.0, 0.0))) + min(max(d.x,d.y),0.0);
 }
 
-fn rounded_box_sdf(p : vec2<f32>, rect : Rect) -> f32 {
+fn rounded_box_sdf(point : vec2<f32>, rect : Rect) -> f32 {
+    var p = point - rect.bound.center;
     var r = select(rect.border_style.border_radius.xy, rect.border_style.border_radius.zw, p.x > 0.0);
     r = select(r, r.yy, p.y > 0.0);
-    r = min(r, rect.size);
-    var q = abs(p) - rect.size + r.x;
+    r = min(r, rect.bound.size);
+    var q = abs(p) - rect.bound.size + r.x;
     return min(max(q.x, q.y), 0.0) + length(max(q, vec2<f32>(0.0, 0.0))) - r.x;
 }
