@@ -17,10 +17,10 @@ use bevy::{ecs::reflect, prelude::*};
 pub enum Value {
     /// Pixel value with support for subpixel values.
     #[reflect(default)]
-    Px(f32),
+    Px(#[reflect(default)] f32),
     /// Percentage value.
     #[reflect(default)]
-    Percent(Percent),
+    Percent(#[reflect(default)] Percent),
 }
 
 impl Default for Value {
@@ -56,7 +56,7 @@ impl From<f32> for Value {
 
 #[derive(Reflect, Default, Clone, Copy)]
 #[reflect(Default)]
-pub struct Percent(f32);
+pub struct Percent(#[reflect(default)] f32);
 
 impl Percent {
     pub fn new(value: f32) -> Self {

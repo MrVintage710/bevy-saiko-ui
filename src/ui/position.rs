@@ -62,6 +62,7 @@ impl RelativePosition {
     
     pub fn calc_relative(parent: &Bounds, child: &mut Bounds, bounds: &Bounds) {
         child.center = parent.center + bounds.center;
+        child.size = bounds.size;
     }
     
     pub fn create_relative(parent: &Bounds, bounds: &Bounds) -> Bounds {

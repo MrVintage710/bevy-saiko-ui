@@ -15,19 +15,15 @@ use super::SaikoComponent;
 
 #[derive(Component, Reflect)]
 pub struct RectComponent {
-    size: Vec2,
     border_radius: Vec4,
     border_thickness: f32,
     background_color: Color,
     border_color: Color,
-    position: Vec2,
 }
 
 impl Default for RectComponent {
     fn default() -> Self {
         RectComponent {
-            position: Vec2::new(0.0, 0.0),
-            size: Vec2::new(100.0, 100.0),
             border_radius: Vec4::new(10.0, 10.0, 10.0, 10.0),
             border_thickness: 5.0,
             background_color: Color::rgba_u8(31, 33, 49, 255),
@@ -38,11 +34,18 @@ impl Default for RectComponent {
 
 impl SaikoComponent for RectComponent {
     fn render(&self, context: &mut SaikoRenderContext<'_>) {
-        context.rect()
-            .border_radius(self.border_radius)
-            .color(self.background_color)
-            .border_color(self.border_color)
-            .border_width(self.border_thickness)
+        
+        context
+            .relative(0.0, 0.0, 100.0, 100.0).rect()
+                .border_radius(self.border_radius)
+                .color(self.background_color)
+                .border_color(self.border_color)
+                .border_width(self.border_thickness)
+            .relative(100.0, 0.0, 100.0, 100.0).rect()
+                .border_radius(self.border_radius)
+                .color(self.background_color)
+                .border_color(self.border_color)
+                .border_width(self.border_thickness)
         ;
         
         // buffer.push_rect(

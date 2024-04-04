@@ -7,6 +7,8 @@ use bevy::{math::{Vec2, Vec4}, render::color::Color, utils::OnDrop};
 
 use crate::{common::bounds::Bounds, render::buffer::{BorderStyleBuffer, FillStyleBuffer, RectBuffer, SaikoBuffer}};
 
+use super::position::RelativePosition;
+
 pub struct SaikoRenderContext<'r> {
     buffer : &'r mut SaikoBuffer,
     bounds : Bounds
@@ -45,12 +47,33 @@ pub trait SaikoRenderContextExtention: Drop {
     
     fn get_buffer(&mut self) -> &mut SaikoBuffer;
     
+    fn width(&self) -> f32 {
+        self.get_bounds().size.x
+    }
+    
+    fn height(&self) -> f32 {
+        self.get_bounds().size.y
+    }
+    
     fn rect(&mut self) -> SaikoRenderContextRectStyler<'_> {
         SaikoRenderContextRectStyler {
             bounds: *self.get_bounds(),
             buffer: self.get_buffer(),
             border_style: BorderStyleBuffer::default(),
             fill_style: FillStyleBuffer::default(),
+        }
+    }
+    
+    fn relative(&mut self, x : f32, y : f32, width : f32, height : f32) -> SaikoRenderContext<'_> {
+        let bounds = Bounds::new(
+            Vec2::new(x, y),
+            Vec2::new(width, height),
+            self.get_bounds().z_index
+        );
+        
+        SaikoRenderContext {
+            bounds: RelativePosition::create_relative(self.get_bounds(), &bounds),
+            buffer: self.get_buffer(),
         }
     }
 }
