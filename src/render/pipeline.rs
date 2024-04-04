@@ -1,9 +1,7 @@
 use bevy::{
-    core_pipeline::{
-        blit::{BlitPipeline, BlitPipelineKey},
-        fullscreen_vertex_shader::fullscreen_shader_vertex_state,
-    },
-    ecs::system::SystemState,
+    core_pipeline::
+        fullscreen_vertex_shader::fullscreen_shader_vertex_state
+    ,
     prelude::*,
     render::{
         render_resource::{
@@ -11,7 +9,7 @@ use bevy::{
             AsBindGroup, BindGroupLayout, BindGroupLayoutEntries, BlendState,
             CachedRenderPipelineId, ColorTargetState, ColorWrites, Extent3d, FragmentState,
             MultisampleState, PipelineCache, PrimitiveState, RenderPipelineDescriptor,
-            SamplerBindingType, ShaderStages, SpecializedRenderPipelines, TextureDescriptor,
+            SamplerBindingType, ShaderStages, TextureDescriptor,
             TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView,
             TextureViewDescriptor,
         },

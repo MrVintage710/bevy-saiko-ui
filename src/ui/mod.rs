@@ -7,7 +7,7 @@ use bevy::prelude::*;
 
 use self::{
     component::{rect::RectComponent, SaikoComponentPlugin},
-    node::{SaikoNode, SaikoNodePlugin},
+    node::SaikoNodePlugin,
 };
 
 pub struct SaikoUiPlugin;
