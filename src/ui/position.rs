@@ -53,11 +53,20 @@ impl RelativePosition {
         width: impl Into<Value>,
         height: impl Into<Value>,
     ) {
-        let horizontal: f32 = horizontal.into().to_pixels(parent.size.x);
-        let vertical: f32 = vertical.into().to_pixels(parent.size.y);
-        todo!()
+        println!("Parent : {:?}", parent);
         
+        let width = width.into().to_pixels(parent.size.x);
+        let height = height.into().to_pixels(parent.size.y);
+        let adjusted_width = parent.size.x - width;
+        let adjusted_height = parent.size.y - height;
+        let horizontal = horizontal.into().to_pixels(adjusted_width);
+        let vertical = vertical.into().to_pixels(adjusted_height);
         
+        let x = parent.center.x - (adjusted_width) + horizontal * 2.0;
+        let y = parent.center.y - (adjusted_height) + vertical * 2.0;
+        
+        child.center = Vec2::new(x, y);
+        child.size = Vec2::new(width, height);
     }
     
     pub fn calc_relative(parent: &Bounds, child: &mut Bounds, bounds: &Bounds) {

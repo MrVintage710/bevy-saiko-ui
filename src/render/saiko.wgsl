@@ -63,7 +63,7 @@ fn box_sdf(p : vec2<f32>, bounds : vec2<f32>) -> f32 {
 }
 
 fn rounded_box_sdf(point : vec2<f32>, rect : Rect) -> f32 {
-    var size = (rect.bound.size * 0.5);
+    var size = (rect.bound.size * 1.0);
     var p = point - (rect.bound.center * vec2<f32>(1.0, -1.0));
     var r = select(rect.border_style.border_radius.xy, rect.border_style.border_radius.zw, p.x > 0.0);
     r = select(r, r.yy, p.y > 0.0);
