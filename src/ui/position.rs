@@ -45,6 +45,12 @@ impl RelativePosition {
         child
     }
 
+    pub fn create_align(parent : &Bounds, horizontal: impl Into<Percent>, vertical: impl Into<Percent>, width: impl Into<Value>, height: impl Into<Value>) -> Bounds {
+        let mut child = Bounds::default();
+        RelativePosition::calc_align(parent, &mut child, horizontal, vertical, width, height);
+        child
+    }
+    
     pub fn calc_align(
         parent: &Bounds,
         child: &mut Bounds,

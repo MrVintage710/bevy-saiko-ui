@@ -22,7 +22,6 @@ impl Plugin for SaikoNodePlugin {
             .add_systems(PostUpdate, update_node_bounds)
             
             .register_type::<SaikoNode>()
-        
         ;
         
     }
@@ -105,20 +104,3 @@ fn update_node_bounds(
         }
     }    
 }
-
-// fn set_bounds(entity : Entity, query : &mut Query<(Entity, &mut SaikoNode, Option<&Parent>)>, bounds : Bounds, updated_nodes : &mut HashSet<Entity>) {
-//     if updated_nodes.contains(&entity) { return }
-//     let Ok((_, mut node, _)) = query.get_mut(entity) else { return };
-//     node.bounds = bounds;
-//     updated_nodes.insert(entity);
-// }
-
-// fn calc_bounds(
-//     entity_pair : (Entity, Option<Entity>),
-//     nodes: &mut Query<(Entity, &mut SaikoNode, Option<&Parent>)>,
-//     default_bounds : Bounds
-// ) -> Bounds {
-//     if let Some(parent) = entity_pair.1 {
-        
-//     }
-// }

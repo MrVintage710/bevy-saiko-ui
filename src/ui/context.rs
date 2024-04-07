@@ -5,7 +5,7 @@
 
 use bevy::{math::{Vec2, Vec4}, render::color::Color};
 
-use crate::{common::bounds::Bounds, render::buffer::{BorderStyleBuffer, FillStyleBuffer, RectBuffer, SaikoBuffer}};
+use crate::{common::{bounds::Bounds, value::{Percent, Value}}, render::buffer::{BorderStyleBuffer, FillStyleBuffer, RectBuffer, SaikoBuffer}};
 
 use super::position::RelativePosition;
 
@@ -75,6 +75,49 @@ pub trait SaikoRenderContextExtention: Drop {
             bounds: RelativePosition::create_relative(self.get_bounds(), &bounds),
             buffer: self.get_buffer(),
         }
+    }
+    
+    fn align(&mut self, horizontal : impl Into<Percent>, vertical : impl Into<Percent>, width : impl Into<Value>, height : impl Into<Value>) -> SaikoRenderContext<'_> {
+        SaikoRenderContext {
+            bounds: RelativePosition::create_align(self.get_bounds(), horizontal, vertical, width, height),
+            buffer: self.get_buffer(),
+        }
+    }
+    
+    fn align_center(&mut self, width : impl Into<Value>, height : impl Into<Value>) -> SaikoRenderContext<'_> {
+        self.align(0.5, 0.5, width, height)
+    }
+    
+    fn align_bottom_center(&mut self, width : impl Into<Value>, height : impl Into<Value>) -> SaikoRenderContext<'_> {
+        self.align(0.5, 0.0, width, height)
+    }
+    
+    fn align_top_center(&mut self, width : impl Into<Value>, height : impl Into<Value>) -> SaikoRenderContext<'_> {
+        self.align(0.5, 1.0, width, height)
+    }
+    
+    fn align_center_left(&mut self, width : impl Into<Value>, height : impl Into<Value>) -> SaikoRenderContext<'_> {
+        self.align(0.0, 0.5, width, height)
+    }
+    
+    fn align_center_right(&mut self, width : impl Into<Value>, height : impl Into<Value>) -> SaikoRenderContext<'_> {
+        self.align(1.0, 0.5, width, height)
+    }
+    
+    fn align_top_left(&mut self, width : impl Into<Value>, height : impl Into<Value>) -> SaikoRenderContext<'_> {
+        self.align(0.0, 1.0, width, height)
+    }
+    
+    fn align_top_right(&mut self, width : impl Into<Value>, height : impl Into<Value>) -> SaikoRenderContext<'_> {
+        self.align(1.0, 1.0, width, height)
+    }
+    
+    fn align_bottom_left(&mut self, width : impl Into<Value>, height : impl Into<Value>) -> SaikoRenderContext<'_> {
+        self.align(0.0, 0.0, width, height)
+    }
+    
+    fn align_bottom_right(&mut self, width : impl Into<Value>, height : impl Into<Value>) -> SaikoRenderContext<'_> {
+        self.align(1.0, 0.0, width, height)
     }
 }
 

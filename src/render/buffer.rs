@@ -2,7 +2,7 @@ use bevy::{
     ecs::storage,
     math::{Vec2, Vec3, Vec4},
     prelude::*,
-    render::render_resource::{AsBindGroup, PreparedBindGroup, ShaderType},
+    render::render_resource::{AsBindGroup, PreparedBindGroup, ShaderType, TextureView},
 };
 
 use crate::common::bounds::Bounds;
@@ -73,6 +73,15 @@ impl RectBuffer {
         self.border_style.border_width = width;
         self
     }
+}
+
+//==============================================================================
+//             ImageBuffer
+//==============================================================================
+
+#[derive(ShaderType)]
+pub struct GlyphBuffer {
+    bound : Bounds,
 }
 
 //==============================================================================
