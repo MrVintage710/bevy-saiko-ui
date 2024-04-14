@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 bevy = "0.13.0"
 bytemuck = { version = "1.15.0", features = [ "derive" ] }
+etagere = "0.2.10"
 # wgpu = "0.19.3"
 
 [dev-dependencies]

@@ -5,7 +5,7 @@ use bevy::{
     prelude::*,
     render::{
         render_resource::{
-            binding_types::{sampler, texture_2d},
+            binding_types::{sampler, texture_2d, texture_3d},
             AsBindGroup, BindGroupLayout, BindGroupLayoutEntries, BlendState,
             CachedRenderPipelineId, ColorTargetState, ColorWrites, Extent3d, FragmentState,
             MultisampleState, PipelineCache, PrimitiveState, RenderPipelineDescriptor,
@@ -20,6 +20,7 @@ use bevy::{
     },
     utils::HashMap,
 };
+use etagere::AtlasAllocator;
 
 use super::{buffer::SaikoBuffer, BLIT_SHADER_HANDLE, SAIKO_SHADER_HANDLE};
 
@@ -68,9 +69,10 @@ impl FromWorld for SaikoRenderPipeline {
     fn from_world(world: &mut World) -> Self {
         let fallback_image = FallbackImage::from_world(world);
         let render_device = world.resource::<RenderDevice>();
-
+        
+        //This is some weird hacky code to get bind group layouts to work
         let bind_group_layout = SaikoBuffer::bind_group_layout(render_device);
-
+        
         let blit_bind_group_layout = render_device.create_bind_group_layout(
             "blit_bind_group_layout",
             &BindGroupLayoutEntries::sequential(

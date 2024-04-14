@@ -2,7 +2,7 @@ use bevy::{
     ecs::storage,
     math::{Vec2, Vec3, Vec4},
     prelude::*,
-    render::render_resource::{AsBindGroup, PreparedBindGroup, ShaderType, TextureView},
+    render::{render_resource::{AsBindGroup, PreparedBindGroup, ShaderType, Texture, TextureId, TextureView}, texture},
 };
 
 use crate::common::bounds::Bounds;
@@ -15,11 +15,16 @@ use crate::common::bounds::Bounds;
 pub struct SaikoBuffer {
     #[storage(0, read_only)]
     pub rectangles: Vec<RectBuffer>,
+    // #[texture(1, dimension = "2d_array", visibility(fragment))]
+    // #[sampler(2)]
+    // pub fonts : Handle<Image>,
     #[uniform(1)]
     pub screen_size: Vec2,
 }
 
 impl SaikoBuffer {
+    pub const NUMBER_OF_ENTRIES: u32 = 2;
+    
     pub fn push_rect(&mut self, rect: impl Into<RectBuffer>) {
         self.rectangles.push(rect.into())
     }

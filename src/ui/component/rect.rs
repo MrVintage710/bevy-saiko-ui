@@ -47,15 +47,5 @@ impl SaikoComponent for RectComponent {
             //     .border_color(self.border_color)
             //     .border_width(self.border_thickness)
         ;
-        
-        // buffer.push_rect(
-        //     RectBuffer::default()
-        //         .with_position(self.position)
-        //         .with_size(self.size)
-        //         .with_color(self.background_color)
-        //         .with_border_radius(self.border_radius)
-        //         .with_border_width(self.border_thickness)
-        //         .with_border_color(self.border_color)
-        // );
     }
 }
