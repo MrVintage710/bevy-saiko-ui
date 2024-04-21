@@ -1,10 +1,10 @@
 
 
-use bevy::{asset::{AssetLoader, AsyncReadExt}, math::U16Vec2, prelude::*, render::Extract, utils::{BoxedFuture, HashMap}};
+use bevy::{asset::{AssetLoader, AsyncReadExt}, ecs::system::CommandQueue, math::U16Vec2, prelude::*, render::{extract_resource::ExtractResource, render_resource::{Extent3d, ImageCopyTexture, ImageDataLayout, Origin3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages}, renderer::{RenderDevice, RenderQueue}, texture::GpuImage, Extract, RenderApp}, utils::{BoxedFuture, HashMap}};
 use etagere::{euclid::{Box2D, UnknownUnit}, Allocation, AtlasAllocator, Size};
 use thiserror::Error;
 use ttf_parser::{Face, GlyphId};
-use msdfgen::{Bitmap, FontExt, MsdfGeneratorConfig, Range, Rgb};
+use msdfgen::{Bitmap, FontExt, MsdfGeneratorConfig, Range, Rgb, Rgba};
 
 use super::SaikoCharacterSet;
 
@@ -17,6 +17,22 @@ impl Plugin for SaikoFontSdfPlugin {
             .init_asset_loader::<SaikoFontSdfLoader>()
             .init_asset::<SaikoFontSdf>()
         ;
+        
+        let Ok(render_app) = app.get_sub_app_mut(RenderApp) else {
+            return;
+        };
+        
+        render_app
+            .add_systems( ExtractSchedule, extract_sdf_fonts,)
+        ;
+    }
+
+    fn finish(&self, app: &mut App) {
+        let Ok(render_app) = app.get_sub_app_mut(RenderApp) else {
+            return;
+        };
+        
+        render_app.init_resource::<SaikoGPUFontAtlas>();
     }
 }
 
@@ -26,12 +42,47 @@ impl Plugin for SaikoFontSdfPlugin {
 
 /// This system extracts fonts from the world and puts them into the correct font atlases
 fn extract_sdf_fonts (
-    fonts : Extract<Res<Assets<SaikoFontSdf>>>
-    
+    mut gpu_font_atlas : ResMut<SaikoGPUFontAtlas>,
+    fonts : Extract<Res<Assets<SaikoFontSdf>>>,
+    render_queue : ResMut<RenderQueue>
 ) {
     for (id, font) in fonts.iter() {
+        if gpu_font_atlas.layers.contains_key(&id) || !font.is_dirty {
+            println!("Font is not dirty");
+            continue;
+        }
         
+        let layer = if let Some(layer) = gpu_font_atlas.layers.get(&id) { *layer } else {
+            let layer = gpu_font_atlas.next_layer;
+            gpu_font_atlas.next_layer += 1;
+            layer
+        };
+        
+        render_queue.write_texture(
+            ImageCopyTexture {
+                texture: &gpu_font_atlas.texture,
+                mip_level: 0,
+                origin: Origin3d { x: 0, y: 0, z: layer },
+                aspect: bevy::render::render_resource::TextureAspect::All,
+            }, 
+            font.raw_data(), 
+            ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(FONT_ATLAS_DIMS * 16),
+                rows_per_image: Some(FONT_ATLAS_DIMS),
+            }, 
+            Extent3d { width: FONT_ATLAS_DIMS, height: FONT_ATLAS_DIMS, depth_or_array_layers: 1 }
+        );
+        
+        gpu_font_atlas.layers.insert(id, layer);
     }
+}
+
+fn initialize_sdf_font_texture (
+    mut commands : Commands,
+    render_device : Res<RenderDevice>
+) {
+    
 }
 
 //==============================================================================
@@ -42,7 +93,7 @@ const FONT_ATLAS_DIMS : u32 = 2048;
 
 #[derive(Asset, TypePath, Clone)]
 pub struct SaikoFontSdf {
-    bitmap : Vec<Rgb<f32>>,
+    bitmap : Vec<Rgba<f32>>,
     allocator : AtlasAllocator,
     glyph_data : HashMap<char, SaikoGlyphData>,
     glyph_size : u32,
@@ -51,7 +102,7 @@ pub struct SaikoFontSdf {
 
 impl Default for SaikoFontSdf {
     fn default() -> Self {
-        let bitmap = vec![Rgb::new(0.0, 0.0, 0.0); FONT_ATLAS_DIMS as usize * FONT_ATLAS_DIMS as usize];
+        let bitmap = vec![Rgba::new(0.0, 0.0, 0.0, 1.0); FONT_ATLAS_DIMS as usize * FONT_ATLAS_DIMS as usize];
         let allocator = AtlasAllocator::new(Size::splat(FONT_ATLAS_DIMS as i32));
         let glyph_size = 32;
         
@@ -95,18 +146,35 @@ impl SaikoFontSdf {
                 let x = x + rect.min.x as u32;
                 let y = y + rect.min.y as u32;
                 let target_pixel = self.pixel_mut(x, y);
-                *target_pixel = *source_pixel;
+                target_pixel.r = source_pixel.r;
+                target_pixel.g = source_pixel.g;
+                target_pixel.b = source_pixel.b;
             }
         }
     }
     
-    pub fn pixel(&self, x : u32, y : u32) -> &Rgb<f32> {
+    pub fn pixel(&self, x : u32, y : u32) -> &Rgba<f32> {
         &self.bitmap[((y*FONT_ATLAS_DIMS) + x) as usize]
     }
     
-    fn pixel_mut(&mut self, x : u32, y : u32) -> &mut Rgb<f32> {
+    fn pixel_mut(&mut self, x : u32, y : u32) -> &mut Rgba<f32> {
         self.is_dirty = true;
         &mut self.bitmap[((y*FONT_ATLAS_DIMS) + x) as usize]
+    }
+    
+    pub fn pixels(&self) -> &[Rgba<f32>] {
+        self.bitmap.as_slice()
+    }
+    
+    pub fn raw_data(&self) -> &[u8] {
+        let pixels = self.pixels();
+        
+        unsafe {
+            core::slice::from_raw_parts(
+                pixels.as_ptr() as _,
+                pixels.len() * core::mem::size_of::<Rgba<f32>>(),
+            )
+        }
     }
     
     fn allocate_glyph(&mut self, character : char, glyph_id : GlyphId, font : &Face) -> Option<Allocation> {
@@ -221,10 +289,39 @@ pub enum SaikoSdfFontError {
 }
 
 //==============================================================================
-//             SaikoFontE 
+//             SaikoGPUFontAtlas
 //==============================================================================
 
-#[derive(Debug, Default)]
-pub struct SaikoSdfFontSettings {
-    pub character_set : SaikoCharacterSet,
+#[derive(Resource)]
+struct SaikoGPUFontAtlas {
+    texture : Texture,
+    layers : HashMap<AssetId<SaikoFontSdf>, u32>,
+    next_layer : u32,
+}
+
+impl FromWorld for SaikoGPUFontAtlas {
+    fn from_world(world: &mut World) -> Self {
+        let render_device = world.get_resource::<RenderDevice>().unwrap();
+        
+        let font_texture = render_device.create_texture(
+            &TextureDescriptor { 
+                label: Some("SaikoFontSdfAtlas"), 
+                size: Extent3d {
+                    width: FONT_ATLAS_DIMS,
+                    height: FONT_ATLAS_DIMS,
+                    depth_or_array_layers: 16,
+                }, 
+                mip_level_count: 1, 
+                sample_count: 1, 
+                dimension: TextureDimension::D3, 
+                format: TextureFormat::Rgba32Float, 
+                usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
+                view_formats: &[] 
+            }
+        );
+        
+        
+        
+        Self { texture : font_texture, layers : HashMap::new(), next_layer : 0 }
+    }
 }

@@ -4,6 +4,11 @@ use bevy_saiko_ui::{
     common::{bounds::Bounds, value::{Percent, Value}}, render::font::sdf::SaikoFontSdf, ui::{component::rect::RectComponent, node::SaikoNode, position::RelativePosition}, SaikoUiPlugin
 };
 
+#[derive(Resource)]
+struct Font {
+    handle: Handle<SaikoFontSdf>,
+}
+
 pub fn main() {
     let mut app = App::new();
 
@@ -59,4 +64,6 @@ fn setup(
     ));
     
     let font : Handle<SaikoFontSdf> = asset_server.load("fonts/NotoSans-Regular.ttf");
+    
+    commands.insert_resource(Font { handle: font } )
 }
