@@ -10,8 +10,8 @@ use bevy::{prelude::*, render::render_resource::ShaderType};
 //          SaikoBounds struct
 //==============================================================================
 
-/// SaikoBounds describes an Rectagul that is axis aligned that determines
-/// the bounds of a UI element.
+/// SaikoBounds describes an Rectagle that is axis aligned that determines
+/// the bounds of a UI element. It is defined by a center point, and a size.
 #[derive(ShaderType, Reflect, Default, Clone, Copy, Debug)]
 pub struct Bounds {
     /// The center of the bounds.

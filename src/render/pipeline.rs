@@ -20,7 +20,6 @@ use bevy::{
     },
     utils::HashMap,
 };
-use etagere::AtlasAllocator;
 
 use super::{buffer::SaikoBuffer, BLIT_SHADER_HANDLE, SAIKO_SHADER_HANDLE};
 

@@ -1,9 +1,7 @@
 use bevy::{prelude::*, window::close_on_esc};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_saiko_ui::{
-    common::{bounds::Bounds, value::{Percent, Value}},
-    ui::{component::rect::RectComponent, node::SaikoNode, position::RelativePosition},
-    SaikoUiPlugin,
+    common::{bounds::Bounds, value::{Percent, Value}}, render::font::SaikoFontSdf, ui::{component::rect::RectComponent, node::SaikoNode, position::RelativePosition}, SaikoUiPlugin
 };
 
 pub fn main() {
@@ -23,6 +21,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server : Res<AssetServer>,
 ) {
     // circular base
     commands.spawn(PbrBundle {
@@ -58,4 +57,6 @@ fn setup(
         SaikoNode::new(RelativePosition::Align(Percent::new(0.5), Percent::new(0.5), Value::Px(200.0), Value::Px(200.0))),
         RectComponent::default(),
     ));
+    
+    let font : Handle<SaikoFontSdf> = asset_server.load("fonts/NotoSans-Regular.ttf");
 }

@@ -23,8 +23,7 @@ use bevy::{
 use crate::{
     common::MarkSaikoUiDirty,
     render::{
-        pass::{SaikoRenderLabel, SaikoSubGraph},
-        pipeline::{SaikoRenderPipeline, SaikoRenderPipelinePlugin},
+        font::SaikoFontPlugin, pass::{SaikoRenderLabel, SaikoSubGraph}, pipeline::{SaikoRenderPipeline, SaikoRenderPipelinePlugin}
     },
 };
 
@@ -64,7 +63,9 @@ impl Plugin for SaikoRenderPlugin {
 
         app.init_resource::<SaikoRenderState>();
 
-        app.add_plugins(SaikoRenderPipelinePlugin)
+        app
+            .add_plugins(SaikoRenderPipelinePlugin)
+            .add_plugins(SaikoFontPlugin)
             .add_systems(First, reset_saiko_render_state)
             .add_systems(Last, update_saiko_render_state);
 

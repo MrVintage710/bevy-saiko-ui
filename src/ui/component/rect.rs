@@ -41,11 +41,11 @@ impl SaikoComponent for RectComponent {
                 .color(self.background_color)
                 .border_color(self.border_color)
                 .border_width(self.border_thickness)
-            // .relative(100.0 + self.border_thickness / 2.0, 0.0, 100.0, 100.0).rect()
-            //     .border_radius(self.border_radius)
-            //     .color(self.background_color)
-            //     .border_color(self.border_color)
-            //     .border_width(self.border_thickness)
+            .relative(100.0 + self.border_thickness / 2.0, 0.0, 100.0, 100.0).rect()
+                .border_radius(self.border_radius)
+                .color(self.background_color)
+                .border_color(self.border_color)
+                .border_width(self.border_thickness)
         ;
     }
 }

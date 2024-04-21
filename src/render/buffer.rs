@@ -90,6 +90,35 @@ pub struct GlyphBuffer {
 }
 
 //==============================================================================
+//             FontIntoBuffer
+//==============================================================================
+
+// #[derive(ShaderType)]
+// pub struct FontAtlasBuffer {
+//     fonts : TextureView
+// }
+
+// #[derive(ShaderType)]
+// pub struct FontAtlasFamilyBuffer {
+//     glyphs : Vec<Vec2>,
+//     uv_delta : f32,
+//     layer : u32,
+// }
+
+// #[derive(ShaderType)]
+// pub struct FontAtlasFamilyBuffer {
+//     glyphs : Vec<>
+// }
+
+#[derive(ShaderType)]
+pub struct FontAtlasGlyphBuffer {
+    pub bound : Bounds,
+    pub family : u32,
+    pub uv_min : Vec2,
+    pub uv_dim : f32,
+}
+
+//==============================================================================
 //             BorderStyleBuffer
 //==============================================================================
 

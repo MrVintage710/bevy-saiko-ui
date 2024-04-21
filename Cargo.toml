@@ -6,10 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.13.0"
-bytemuck = { version = "1.15.0", features = [ "derive" ] }
+bevy = "0.13.2"
+thiserror = "1.0.58"
+ttf-parser = "0.18.0"
+msdfgen = { version = "0.2.1", features = ["ttf-parser"] }
 etagere = "0.2.10"
-# wgpu = "0.19.3"
+notosans = "0.1.0"
 
 [dev-dependencies]
 bevy-inspector-egui = "0.23.0"
