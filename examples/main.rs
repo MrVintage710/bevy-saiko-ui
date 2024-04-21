@@ -1,7 +1,7 @@
 use bevy::{prelude::*, window::close_on_esc};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_saiko_ui::{
-    common::{bounds::Bounds, value::{Percent, Value}}, render::font::SaikoFontSdf, ui::{component::rect::RectComponent, node::SaikoNode, position::RelativePosition}, SaikoUiPlugin
+    common::{bounds::Bounds, value::{Percent, Value}}, render::font::sdf::SaikoFontSdf, ui::{component::rect::RectComponent, node::SaikoNode, position::RelativePosition}, SaikoUiPlugin
 };
 
 pub fn main() {
