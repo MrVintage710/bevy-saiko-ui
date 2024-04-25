@@ -5,13 +5,7 @@ use bevy::{
     prelude::*,
     render::{
         render_resource::{
-            binding_types::{sampler, texture_2d, texture_3d},
-            AsBindGroup, BindGroupLayout, BindGroupLayoutEntries, BlendState,
-            CachedRenderPipelineId, ColorTargetState, ColorWrites, Extent3d, FragmentState,
-            MultisampleState, PipelineCache, PrimitiveState, RenderPipelineDescriptor,
-            SamplerBindingType, ShaderStages, TextureDescriptor,
-            TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView,
-            TextureViewDescriptor,
+            binding_types::{sampler, texture_2d}, AddressMode, AsBindGroup, BindGroupLayout, BindGroupLayoutEntries, BlendState, CachedRenderPipelineId, ColorTargetState, ColorWrites, Extent3d, FilterMode, FragmentState, MultisampleState, PipelineCache, PrimitiveState, RenderPipelineDescriptor, Sampler, SamplerBindingType, SamplerDescriptor, ShaderStages, ShaderType, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor
         },
         renderer::RenderDevice,
         texture::{BevyDefault, FallbackImage},
@@ -21,7 +15,7 @@ use bevy::{
     utils::HashMap,
 };
 
-use super::{buffer::SaikoBuffer, BLIT_SHADER_HANDLE, SAIKO_SHADER_HANDLE};
+use super::{buffer::{FontAtlasSdfBuffer, SaikoBuffer, ManualShaderType}, BLIT_SHADER_HANDLE, SAIKO_SHADER_HANDLE};
 
 //==============================================================================
 //             RenderPipelinePlugin
@@ -59,6 +53,8 @@ pub struct SaikoRenderPipeline {
     pub(crate) pipeline: CachedRenderPipelineId,
     pub(crate) blit_pipeline: CachedRenderPipelineId,
     pub(crate) bind_group_layout: BindGroupLayout,
+    pub(crate) font_bind_group_layout: BindGroupLayout,
+    pub(crate) font_atlas_sampler : Sampler,
     pub(crate) blit_bind_group_layout: BindGroupLayout,
     pub(crate) render_textures: HashMap<Entity, (TextureView, u32, u32)>,
     pub(crate) fallback_image: FallbackImage,
@@ -71,6 +67,23 @@ impl FromWorld for SaikoRenderPipeline {
         
         //This is some weird hacky code to get bind group layouts to work
         let bind_group_layout = SaikoBuffer::bind_group_layout(render_device);
+        let font_bind_group_layout = FontAtlasSdfBuffer::bind_group_layout(render_device);
+        
+        let font_atlas_sampler = render_device.create_sampler(&SamplerDescriptor {
+            label: Some("Saiko SDF Font Atlas Sampler"),
+            address_mode_u: AddressMode::ClampToEdge,
+            address_mode_v: AddressMode::ClampToEdge,
+            address_mode_w: AddressMode::ClampToEdge,
+            // mag_filter: FilterMode::Linear,
+            // min_filter: FilterMode::Linear,
+            // mipmap_filter: todo!(),
+            // lod_min_clamp: todo!(),
+            // lod_max_clamp: todo!(),
+            compare: None,
+            anisotropy_clamp: 1,
+            border_color: None,
+            ..Default::default()
+        });
         
         let blit_bind_group_layout = render_device.create_bind_group_layout(
             "blit_bind_group_layout",
@@ -85,7 +98,7 @@ impl FromWorld for SaikoRenderPipeline {
 
         let pipeline = RenderPipelineDescriptor {
             label: Some("SaikoUI Render Pipeline".into()),
-            layout: vec![bind_group_layout.clone()],
+            layout: vec![bind_group_layout.clone(), font_bind_group_layout.clone()],
             // layout: vec![],
             vertex: fullscreen_shader_vertex_state(),
             fragment: Some(FragmentState {
@@ -137,6 +150,8 @@ impl FromWorld for SaikoRenderPipeline {
             pipeline,
             blit_pipeline,
             bind_group_layout,
+            font_bind_group_layout,
+            font_atlas_sampler,
             blit_bind_group_layout,
             render_textures: HashMap::new(),
             fallback_image,

@@ -27,6 +27,11 @@ var<storage, read> rect : array<Rect>;
 @group(0) @binding(1)
 var<uniform> resolution : vec2<f32>;
 
+@group(1) @binding(0)
+var font_atlas : texture_2d_array<f32>;
+@group(1) @binding(1)
+var font_atlas_sampler : sampler;
+
 @fragment
 fn fragment( 
     @builtin(position) pos: vec4<f32>,
@@ -54,8 +59,10 @@ fn fragment(
         );
     }
         
-    return final_color;
+    // return final_color;
+    return textureSample(font_atlas, font_atlas_sampler, uv, 0);
 }
+
 
 fn box_sdf(p : vec2<f32>, bounds : vec2<f32>) -> f32 {
     var d = abs(p)-bounds;

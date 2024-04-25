@@ -13,7 +13,7 @@ use bevy::{
     render::{
         render_asset::RenderAssets,
         render_graph::{RenderGraph, RunGraphOnViewNode, ViewNodeRunner},
-        render_resource::AsBindGroup,
+        render_resource::{AsBindGroup, BindGroupEntry, BindingResource},
         renderer::RenderDevice,
         view::{RenderLayers, ViewTarget},
         Extract, Render, RenderApp, RenderSet,
@@ -28,8 +28,7 @@ use crate::{
 };
 
 use self::{
-    buffer::{SaikoBuffer, SaikoPreparedBuffer},
-    pass::SaikoRenderNode,
+    buffer::{SaikoBuffer, SaikoPreparedBuffer}, font::sdf::SaikoGPUFontAtlas, pass::SaikoRenderNode
 };
 
 //==============================================================================
@@ -81,7 +80,7 @@ impl Plugin for SaikoRenderPlugin {
         
         render_app.add_systems(
             Render,
-            prepare_prepare_bind_groups.in_set(RenderSet::PrepareResources),
+            prepare_bind_groups.in_set(RenderSet::PrepareResources),
         );
 
         let ui_graph_2d = get_ui_graph(render_app);
@@ -180,12 +179,13 @@ fn extract_cameras_for_render(
     }
 }
 
-fn prepare_prepare_bind_groups(
+fn prepare_bind_groups(
     mut commands: Commands,
     mut render_targets: Query<(Entity, &mut SaikoRenderTarget, &ViewTarget)>,
     saiko_pipeline: ResMut<SaikoRenderPipeline>,
     images: Res<RenderAssets<Image>>,
     render_device: Res<RenderDevice>,
+    font_atlas_data : Res<SaikoGPUFontAtlas>
 ) {
     for (render_target_entity, mut render_target, view_target) in render_targets.iter_mut() {
         println!("Preparing render texture");
@@ -200,8 +200,23 @@ fn prepare_prepare_bind_groups(
             continue;
         };
         
+        let font_bind_group = render_device.create_bind_group(
+            "SaikoBindGroup", 
+            &saiko_pipeline.font_bind_group_layout, 
+            &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: BindingResource::TextureViewArray(&[font_atlas_data.texture_view()]),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: BindingResource::Sampler(&saiko_pipeline.font_atlas_sampler),
+                },
+            ]
+        );
+        
         commands
             .entity(render_target_entity)
-            .insert(SaikoPreparedBuffer(prepared_bind_group));
+            .insert(SaikoPreparedBuffer(prepared_bind_group, font_bind_group));
     }
 }

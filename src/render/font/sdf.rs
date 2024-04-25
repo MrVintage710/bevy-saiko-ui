@@ -1,6 +1,6 @@
 
 
-use bevy::{asset::{AssetLoader, AsyncReadExt}, ecs::system::CommandQueue, math::U16Vec2, prelude::*, render::{extract_resource::ExtractResource, render_resource::{Extent3d, ImageCopyTexture, ImageDataLayout, Origin3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages}, renderer::{RenderDevice, RenderQueue}, texture::GpuImage, Extract, RenderApp}, utils::{BoxedFuture, HashMap}};
+use bevy::{asset::{AssetLoader, AsyncReadExt}, ecs::system::CommandQueue, math::U16Vec2, prelude::*, render::{extract_resource::ExtractResource, render_resource::{Extent3d, ImageCopyTexture, ImageDataLayout, Origin3d, Texture, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension}, renderer::{RenderDevice, RenderQueue}, texture::GpuImage, Extract, RenderApp}, utils::{BoxedFuture, HashMap}};
 use etagere::{euclid::{Box2D, UnknownUnit}, Allocation, AtlasAllocator, Size};
 use thiserror::Error;
 use ttf_parser::{Face, GlyphId};
@@ -48,7 +48,6 @@ fn extract_sdf_fonts (
 ) {
     for (id, font) in fonts.iter() {
         if gpu_font_atlas.layers.contains_key(&id) || !font.is_dirty {
-            println!("Font is not dirty");
             continue;
         }
         
@@ -63,7 +62,7 @@ fn extract_sdf_fonts (
                 texture: &gpu_font_atlas.texture,
                 mip_level: 0,
                 origin: Origin3d { x: 0, y: 0, z: layer },
-                aspect: bevy::render::render_resource::TextureAspect::All,
+                aspect: TextureAspect::All,
             }, 
             font.raw_data(), 
             ImageDataLayout {
@@ -293,10 +292,21 @@ pub enum SaikoSdfFontError {
 //==============================================================================
 
 #[derive(Resource)]
-struct SaikoGPUFontAtlas {
+pub struct SaikoGPUFontAtlas {
     texture : Texture,
+    texture_view : TextureView,
     layers : HashMap<AssetId<SaikoFontSdf>, u32>,
     next_layer : u32,
+}
+
+impl SaikoGPUFontAtlas {
+    pub fn texture(&self) -> &Texture {
+        &self.texture
+    }
+
+    pub fn texture_view(&self) -> &TextureView {
+        &self.texture_view
+    }
 }
 
 impl FromWorld for SaikoGPUFontAtlas {
@@ -309,19 +319,30 @@ impl FromWorld for SaikoGPUFontAtlas {
                 size: Extent3d {
                     width: FONT_ATLAS_DIMS,
                     height: FONT_ATLAS_DIMS,
-                    depth_or_array_layers: 16,
+                    depth_or_array_layers: 1,
                 }, 
                 mip_level_count: 1, 
                 sample_count: 1, 
-                dimension: TextureDimension::D3, 
+                dimension: TextureDimension::D2, 
                 format: TextureFormat::Rgba32Float, 
                 usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
                 view_formats: &[] 
             }
         );
         
+        let texture_view = font_texture.create_view(&TextureViewDescriptor {
+            label: Some("Saiko Font Atlas Texture View"),
+            dimension: Some(TextureViewDimension::D2Array),
+            ..Default::default()
+            // format: Some(TextureFormat::Rgba32Float),
+            // dimension: Some(TextureViewDimension::D2Array),
+            // aspect:TextureAspect::All,
+            // base_mip_level: 0,
+            // mip_level_count: Some(1),
+            // base_array_layer: todo!(),
+            // array_layer_count: todo!(),
+        });
         
-        
-        Self { texture : font_texture, layers : HashMap::new(), next_layer : 0 }
+        Self { texture : font_texture, texture_view, layers : HashMap::new(), next_layer : 0 }
     }
 }

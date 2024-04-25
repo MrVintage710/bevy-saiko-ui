@@ -1,11 +1,16 @@
+use std::num::NonZeroU32;
+
 use bevy::{
-    ecs::storage,
-    math::{Vec2, Vec3, Vec4},
+    math::{Vec2, Vec4},
     prelude::*,
-    render::{render_resource::{AsBindGroup, PreparedBindGroup, ShaderType, Texture, TextureId, TextureView}, texture},
+    render::{render_resource::{AsBindGroup, BindGroup, BindGroupLayout, BindGroupLayoutEntry, BindingType, PreparedBindGroup, SamplerBindingType, ShaderStages, ShaderType, TextureViewDimension}, renderer::RenderDevice},
 };
 
 use crate::common::bounds::Bounds;
+
+pub trait ManualShaderType {
+    fn bind_group_layout(render_device : &RenderDevice) -> BindGroupLayout;
+}
 
 //==============================================================================
 //             Saikobuffer
@@ -35,7 +40,7 @@ impl SaikoBuffer {
 //==============================================================================
 
 #[derive(Component)]
-pub struct SaikoPreparedBuffer(pub PreparedBindGroup<()>);
+pub struct SaikoPreparedBuffer(pub PreparedBindGroup<()>, pub BindGroup);
 
 //==============================================================================
 //             RectBuffer
@@ -93,22 +98,35 @@ pub struct GlyphBuffer {
 //             FontIntoBuffer
 //==============================================================================
 
-// #[derive(ShaderType)]
-// pub struct FontAtlasBuffer {
-//     fonts : TextureView
-// }
+pub struct FontAtlasSdfBuffer {
+    
+}
 
-// #[derive(ShaderType)]
-// pub struct FontAtlasFamilyBuffer {
-//     glyphs : Vec<Vec2>,
-//     uv_delta : f32,
-//     layer : u32,
-// }
-
-// #[derive(ShaderType)]
-// pub struct FontAtlasFamilyBuffer {
-//     glyphs : Vec<>
-// }
+impl ManualShaderType for FontAtlasSdfBuffer {
+    fn bind_group_layout(render_device : &RenderDevice) -> BindGroupLayout {
+        render_device.create_bind_group_layout(
+            "SaikoFontAtlasSdf",
+            &[
+                BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Texture { 
+                        sample_type: bevy::render::render_resource::TextureSampleType::Float { filterable: false }, 
+                        view_dimension: TextureViewDimension::D2Array, 
+                        multisampled: false 
+                    },
+                    count: Some(NonZeroU32::new(1).unwrap()),
+                },
+                BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Sampler(SamplerBindingType::NonFiltering),
+                    count: None,
+                },
+            ]
+        )
+    }
+}
 
 #[derive(ShaderType)]
 pub struct FontAtlasGlyphBuffer {

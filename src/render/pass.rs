@@ -71,6 +71,7 @@ impl ViewNode for SaikoRenderNode {
             println!("Rendering to texture!");
             //Get the bind group from the prepared buffer
             let bind_group = &prepared_buffer.0.bind_group;
+            let font_atlas_bind_group = &prepared_buffer.1;
 
             //Create the render pass. This is what will render the final result.
             let mut render_pass = render_context.begin_tracked_render_pass(RenderPassDescriptor {
@@ -89,6 +90,7 @@ impl ViewNode for SaikoRenderNode {
             //Set the pipeline to be rendered and attach the bind group
             render_pass.set_render_pipeline(saiko_pipeline);
             render_pass.set_bind_group(0, bind_group, &[]);
+            render_pass.set_bind_group(1, font_atlas_bind_group, &[]);
 
             //Send it baby!
             render_pass.draw(0..3, 0..1);
