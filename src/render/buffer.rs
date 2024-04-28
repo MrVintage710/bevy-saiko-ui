@@ -3,10 +3,12 @@ use std::num::NonZeroU32;
 use bevy::{
     math::{Vec2, Vec4},
     prelude::*,
-    render::{render_resource::{AsBindGroup, BindGroup, BindGroupLayout, BindGroupLayoutEntry, BindingType, PreparedBindGroup, SamplerBindingType, ShaderStages, ShaderType, TextureViewDimension}, renderer::RenderDevice},
+    render::{render_asset::RenderAssets, render_resource::{AsBindGroup, AsBindGroupError, BindGroup, BindGroupLayout, BindGroupLayoutEntry, BindingType, PreparedBindGroup, SamplerBindingType, ShaderStages, ShaderType, Texture, TextureView, TextureViewDimension, UnpreparedBindGroup}, renderer::RenderDevice, texture::FallbackImage}, utils::HashMap,
 };
 
 use crate::common::bounds::Bounds;
+
+use super::font::sdf::{SaikoFontSdf};
 
 pub trait ManualShaderType {
     fn bind_group_layout(render_device : &RenderDevice) -> BindGroupLayout;
@@ -20,9 +22,6 @@ pub trait ManualShaderType {
 pub struct SaikoBuffer {
     #[storage(0, read_only)]
     pub rectangles: Vec<RectBuffer>,
-    // #[texture(1, dimension = "2d_array", visibility(fragment))]
-    // #[sampler(2)]
-    // pub fonts : Handle<Image>,
     #[uniform(1)]
     pub screen_size: Vec2,
 }
@@ -98,35 +97,33 @@ pub struct GlyphBuffer {
 //             FontIntoBuffer
 //==============================================================================
 
-pub struct FontAtlasSdfBuffer {
-    
-}
+// pub struct FontAtlasSdfBuffer;
 
-impl ManualShaderType for FontAtlasSdfBuffer {
-    fn bind_group_layout(render_device : &RenderDevice) -> BindGroupLayout {
-        render_device.create_bind_group_layout(
-            "SaikoFontAtlasSdf",
-            &[
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::FRAGMENT,
-                    ty: BindingType::Texture { 
-                        sample_type: bevy::render::render_resource::TextureSampleType::Float { filterable: false }, 
-                        view_dimension: TextureViewDimension::D2Array, 
-                        multisampled: false 
-                    },
-                    count: Some(NonZeroU32::new(1).unwrap()),
-                },
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: ShaderStages::FRAGMENT,
-                    ty: BindingType::Sampler(SamplerBindingType::NonFiltering),
-                    count: None,
-                },
-            ]
-        )
-    }
-}
+// impl FontAtlasSdfBuffer {
+//     pub fn bind_group_layout(render_device : &RenderDevice) -> BindGroupLayout {
+//         render_device.create_bind_group_layout(
+//             "SaikoFontAtlasSdf",
+//             &[
+//                 BindGroupLayoutEntry {
+//                     binding: 0,
+//                     visibility: ShaderStages::FRAGMENT,
+//                     ty: BindingType::Texture { 
+//                         sample_type: bevy::render::render_resource::TextureSampleType::Float { filterable: false }, 
+//                         view_dimension: TextureViewDimension::D2Array, 
+//                         multisampled: false 
+//                     },
+//                     count: Some(NonZeroU32::new().unwrap()),
+//                 },
+//                 BindGroupLayoutEntry {
+//                     binding: 1,
+//                     visibility: ShaderStages::FRAGMENT,
+//                     ty: BindingType::Sampler(SamplerBindingType::NonFiltering),
+//                     count: None,
+//                 },
+//             ]
+//         )
+//     }
+// }
 
 #[derive(ShaderType)]
 pub struct FontAtlasGlyphBuffer {

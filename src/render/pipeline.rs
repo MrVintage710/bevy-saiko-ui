@@ -15,7 +15,7 @@ use bevy::{
     utils::HashMap,
 };
 
-use super::{buffer::{FontAtlasSdfBuffer, SaikoBuffer, ManualShaderType}, BLIT_SHADER_HANDLE, SAIKO_SHADER_HANDLE};
+use super::{buffer::{ManualShaderType, SaikoBuffer}, font::sdf::GpuSaikoFonts, BLIT_SHADER_HANDLE, SAIKO_SHADER_HANDLE};
 
 //==============================================================================
 //             RenderPipelinePlugin
@@ -53,37 +53,39 @@ pub struct SaikoRenderPipeline {
     pub(crate) pipeline: CachedRenderPipelineId,
     pub(crate) blit_pipeline: CachedRenderPipelineId,
     pub(crate) bind_group_layout: BindGroupLayout,
-    pub(crate) font_bind_group_layout: BindGroupLayout,
-    pub(crate) font_atlas_sampler : Sampler,
     pub(crate) blit_bind_group_layout: BindGroupLayout,
     pub(crate) render_textures: HashMap<Entity, (TextureView, u32, u32)>,
     pub(crate) fallback_image: FallbackImage,
+    pub(crate) fonts : GpuSaikoFonts,
 }
 
 impl FromWorld for SaikoRenderPipeline {
     fn from_world(world: &mut World) -> Self {
+        let fonts = GpuSaikoFonts::from_world(world);
+        
         let fallback_image = FallbackImage::from_world(world);
         let render_device = world.resource::<RenderDevice>();
         
+        
         //This is some weird hacky code to get bind group layouts to work
         let bind_group_layout = SaikoBuffer::bind_group_layout(render_device);
-        let font_bind_group_layout = FontAtlasSdfBuffer::bind_group_layout(render_device);
+        let font_bind_group_layout = fonts.bind_group_layout();
         
-        let font_atlas_sampler = render_device.create_sampler(&SamplerDescriptor {
-            label: Some("Saiko SDF Font Atlas Sampler"),
-            address_mode_u: AddressMode::ClampToEdge,
-            address_mode_v: AddressMode::ClampToEdge,
-            address_mode_w: AddressMode::ClampToEdge,
-            // mag_filter: FilterMode::Linear,
-            // min_filter: FilterMode::Linear,
-            // mipmap_filter: todo!(),
-            // lod_min_clamp: todo!(),
-            // lod_max_clamp: todo!(),
-            compare: None,
-            anisotropy_clamp: 1,
-            border_color: None,
-            ..Default::default()
-        });
+        // let font_atlas_sampler = render_device.create_sampler(&SamplerDescriptor {
+        //     label: Some("Saiko SDF Font Atlas Sampler"),
+        //     address_mode_u: AddressMode::ClampToEdge,
+        //     address_mode_v: AddressMode::ClampToEdge,
+        //     address_mode_w: AddressMode::ClampToEdge,
+        //     // mag_filter: FilterMode::Linear,
+        //     // min_filter: FilterMode::Linear,
+        //     // mipmap_filter: todo!(),
+        //     // lod_min_clamp: todo!(),
+        //     // lod_max_clamp: todo!(),
+        //     compare: None,
+        //     anisotropy_clamp: 1,
+        //     border_color: None,
+        //     ..Default::default()
+        // });
         
         let blit_bind_group_layout = render_device.create_bind_group_layout(
             "blit_bind_group_layout",
@@ -150,11 +152,10 @@ impl FromWorld for SaikoRenderPipeline {
             pipeline,
             blit_pipeline,
             bind_group_layout,
-            font_bind_group_layout,
-            font_atlas_sampler,
             blit_bind_group_layout,
             render_textures: HashMap::new(),
             fallback_image,
+            fonts
         }
     }
 }

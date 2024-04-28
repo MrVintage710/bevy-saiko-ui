@@ -28,7 +28,7 @@ use crate::{
 };
 
 use self::{
-    buffer::{SaikoBuffer, SaikoPreparedBuffer}, font::sdf::SaikoGPUFontAtlas, pass::SaikoRenderNode
+    buffer::{SaikoBuffer, SaikoPreparedBuffer}, font::sdf::GpuSaikoFonts, pass::SaikoRenderNode
 };
 
 //==============================================================================
@@ -185,7 +185,7 @@ fn prepare_bind_groups(
     saiko_pipeline: ResMut<SaikoRenderPipeline>,
     images: Res<RenderAssets<Image>>,
     render_device: Res<RenderDevice>,
-    font_atlas_data : Res<SaikoGPUFontAtlas>
+    // font_atlas_data : Res<SaikoGPUFontAtlas>
 ) {
     for (render_target_entity, mut render_target, view_target) in render_targets.iter_mut() {
         println!("Preparing render texture");
@@ -200,20 +200,22 @@ fn prepare_bind_groups(
             continue;
         };
         
-        let font_bind_group = render_device.create_bind_group(
-            "SaikoBindGroup", 
-            &saiko_pipeline.font_bind_group_layout, 
-            &[
-                BindGroupEntry {
-                    binding: 0,
-                    resource: BindingResource::TextureViewArray(&[font_atlas_data.texture_view()]),
-                },
-                BindGroupEntry {
-                    binding: 1,
-                    resource: BindingResource::Sampler(&saiko_pipeline.font_atlas_sampler),
-                },
-            ]
-        );
+        // let font_bind_group = render_device.create_bind_group(
+        //     "SaikoBindGroup", 
+        //     &saiko_pipeline.font_bind_group_layout, 
+        //     &[
+        //         BindGroupEntry {
+        //             binding: 0,
+        //             resource: BindingResource::TextureViewArray(&[font_atlas_data.texture_view(), font_atlas_data.texture_view()]),
+        //         },
+        //         BindGroupEntry {
+        //             binding: 1,
+        //             resource: BindingResource::Sampler(&saiko_pipeline.font_atlas_sampler),
+        //         },
+        //     ]
+        // );
+        
+        let font_bind_group = saiko_pipeline.fonts.create_master_bind(render_device.as_ref());
         
         commands
             .entity(render_target_entity)
