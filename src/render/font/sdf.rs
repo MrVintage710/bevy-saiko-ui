@@ -2,11 +2,11 @@
 
 use std::num::NonZeroU32;
 
-use bevy::{asset::{AssetLoader, AsyncReadExt}, math::U16Vec2, prelude::*, render::{render_resource::{AddressMode, BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingResource, BindingType, Extent3d, ImageCopyTexture, ImageDataLayout, Origin3d, Sampler, SamplerBindingType, SamplerDescriptor, ShaderStages, Texture, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension}, renderer::{RenderDevice, RenderQueue}, texture::GpuImage, Extract, RenderApp}, utils::{BoxedFuture, HashMap}};
+use bevy::{asset::{AssetLoader, AsyncReadExt}, ecs::reflect, math::U16Vec2, prelude::*, render::{render_resource::{AddressMode, BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingResource, BindingType, Extent3d, FilterMode, ImageCopyTexture, ImageDataLayout, Origin3d, Sampler, SamplerBindingType, SamplerDescriptor, ShaderStages, Texture, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension}, renderer::{RenderDevice, RenderQueue}, Extract, RenderApp}, utils::{BoxedFuture, HashMap}};
 use etagere::{euclid::{Box2D, UnknownUnit}, Allocation, AtlasAllocator, Size};
 use thiserror::Error;
 use ttf_parser::{Face, GlyphId};
-use msdfgen::{Bitmap, FontExt, MsdfGeneratorConfig, Range, Rgb, Rgba};
+use msdfgen::{Bitmap, FillRule, FontExt, MsdfGeneratorConfig, Range, Rgb, Rgba};
 
 use crate::render::pipeline::SaikoRenderPipeline;
 
@@ -18,6 +18,8 @@ pub struct SaikoFontSdfPlugin;
 impl Plugin for SaikoFontSdfPlugin {
     fn build(&self, app: &mut App) {
         app
+            .add_systems(First, reset_fonts)
+            
             .init_asset_loader::<SaikoFontSdfLoader>()
             .init_asset::<SaikoFontSdf>()
         ;
@@ -63,16 +65,28 @@ fn extract_sdf_fonts (
     }
 }
 
+fn reset_fonts(
+    mut fonts : ResMut<Assets<SaikoFontSdf>>
+) {
+    for font in fonts.iter_mut() {
+        font.1.is_dirty = false;
+    }
+}
+
 //==============================================================================
 //             SaikoFontArray
 //==============================================================================
 
 const FONT_ATLAS_DIMS : u32 = 2048;
 
-#[derive(Asset, TypePath)]
+#[derive(Asset, Reflect)]
+#[reflect(Default)]
 pub struct SaikoFontSdf {
+    #[reflect(ignore)]
     bitmap : Vec<Rgba<f32>>,
+    #[reflect(ignore)]
     allocator : AtlasAllocator,
+    #[reflect(ignore)]
     glyph_data : HashMap<char, SaikoGlyphData>,
     glyph_size : u32,
     is_dirty : bool,
@@ -82,7 +96,7 @@ impl Default for SaikoFontSdf {
     fn default() -> Self {
         let bitmap = vec![Rgba::new(0.0, 0.0, 0.0, 1.0); FONT_ATLAS_DIMS as usize * FONT_ATLAS_DIMS as usize];
         let allocator = AtlasAllocator::new(Size::splat(FONT_ATLAS_DIMS as i32));
-        let glyph_size = 32;
+        let glyph_size = 40;
         
         Self { bitmap, allocator, glyph_size, glyph_data : HashMap::default(), is_dirty : true }
     }
@@ -107,8 +121,11 @@ impl SaikoFontSdf {
         
         let mut bitmap = Bitmap::new(self.glyph_size, self.glyph_size);
         
-        glyph_shape.edge_coloring_simple(3.0, 0);
-        glyph_shape.generate_msdf(&mut bitmap, framing, MsdfGeneratorConfig::default());
+        glyph_shape.edge_coloring_simple(16.0, 0);
+        let config = MsdfGeneratorConfig::default();
+        glyph_shape.generate_msdf(&mut bitmap, framing, config);
+        glyph_shape.correct_sign(&mut bitmap, &framing, FillRule::default());
+        glyph_shape.correct_msdf_error(&mut bitmap, framing, config);
         bitmap.flip_y();
         
         self.insert_bitmap(bitmap, allocation);
@@ -159,7 +176,7 @@ impl SaikoFontSdf {
     }
     
     fn allocate_glyph(&mut self, character : char, glyph_id : GlyphId, font : &Face) -> Option<Allocation> {
-        let Some(allocation) = self.allocator.allocate(Size::splat(32)) else { return None };
+        let Some(allocation) = self.allocator.allocate(Size::splat(self.glyph_size as i32)) else { return None };
         let rect = self.allocator.get(allocation.id);
         
         let data = SaikoGlyphData::from_font(glyph_id, font, allocation, rect);
@@ -273,8 +290,8 @@ impl GpuSaikoFonts {
             address_mode_u: AddressMode::ClampToEdge,
             address_mode_v: AddressMode::ClampToEdge,
             address_mode_w: AddressMode::ClampToEdge,
-            // mag_filter: FilterMode::Linear,
-            // min_filter: FilterMode::Linear,
+            mag_filter: FilterMode::Linear,
+            min_filter: FilterMode::Linear,
             // mipmap_filter: todo!(),
             // lod_min_clamp: todo!(),
             // lod_max_clamp: todo!(),
@@ -291,7 +308,7 @@ impl GpuSaikoFonts {
                     binding: 0,
                     visibility: ShaderStages::FRAGMENT,
                     ty: BindingType::Texture { 
-                        sample_type: bevy::render::render_resource::TextureSampleType::Float { filterable: false }, 
+                        sample_type: bevy::render::render_resource::TextureSampleType::Float { filterable: true }, 
                         view_dimension: TextureViewDimension::D2Array, 
                         multisampled: false 
                     },
@@ -300,7 +317,7 @@ impl GpuSaikoFonts {
                 BindGroupLayoutEntry {
                     binding: 1,
                     visibility: ShaderStages::FRAGMENT,
-                    ty: BindingType::Sampler(SamplerBindingType::NonFiltering),
+                    ty: BindingType::Sampler(SamplerBindingType::Filtering),
                     count: None,
                 },
             ]

@@ -16,7 +16,8 @@ pub fn main() {
         .add_plugins(SaikoUiPlugin)
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
-        .add_systems(Update, close_on_esc);
+        .add_systems(Update, close_on_esc)
+    ;
 
     app.run();
 }

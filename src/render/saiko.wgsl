@@ -60,9 +60,26 @@ fn fragment(
     }
         
     // return final_color;
-    return textureSample(font_atlas, font_atlas_sampler, uv, 0);
+    var color = textureSample(font_atlas, font_atlas_sampler, uv, 0);
+    var distance = median(color.r, color.g, color.b);
+    var screen_distance = 2.5 * (distance - 0.5);
+    var opacity = clamp(screen_distance + 0.5, 0.0, 1.0);
+    return vec4<f32>(1.0, 1.0, 1.0, opacity);
+    
+    
+    // let s = smoothstep(0.0, 1.0, cos(distance));
+    // return vec4<f32>(0.0, 0.0, s, 1.0);
+    
+    // return select(
+    //     vec4<f32>(1.0, 1.0, 1.0, 1.0),
+    //     vec4<f32>(0.0, 0.0, 0.0, 1.0),
+    //     screen_distance < 0.0
+    // );
 }
 
+fn median(r : f32, g : f32, b : f32) -> f32 {
+    return max(min(r, g), min(max(r, g), b));
+}
 
 fn box_sdf(p : vec2<f32>, bounds : vec2<f32>) -> f32 {
     var d = abs(p)-bounds;
