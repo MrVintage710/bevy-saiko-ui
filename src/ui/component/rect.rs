@@ -34,18 +34,19 @@ impl Default for RectComponent {
 
 impl SaikoComponent for RectComponent {
     fn render(&self, context: &mut SaikoRenderContext<'_>) {
-        
         context
+            .line((0.0, -100.0), (0.0, 100.0)).color(Color::RED.with_a(0.5)).thickness(10.0).border_thickness(4.0)
+            .line((-100.0, 0.0), (100.0, 0.0)).color(Color::RED)
             .rect()
                 .border_radius(self.border_radius)
                 .color(self.background_color)
                 .border_color(self.border_color)
-                .border_width(self.border_thickness)
-            .relative(100.0 + self.border_thickness / 2.0, 0.0, 100.0, 100.0).rect()
-                .border_radius(self.border_radius)
-                .color(self.background_color)
-                .border_color(self.border_color)
-                .border_width(self.border_thickness)
+                .border_thickness(self.border_thickness)
+            // .relative(100.0 + self.border_thickness / 2.0, 0.0, 100.0, 100.0).rect()
+            //     .border_radius(self.border_radius)
+            //     .color(self.background_color)
+            //     .border_color(self.border_color)
+            //     .border_width(self.border_thickness)
         ;
     }
 }

@@ -21,17 +21,21 @@ pub trait ManualShaderType {
 pub struct SaikoBuffer {
     #[storage(0, read_only)]
     pub rectangles: Vec<RectBuffer>,
-    // #[storage(1, read_only)]
-    // pub text_glyphs: Vec<TextGlyphBuffer>,
-    #[uniform(1)]
+    #[storage(1, read_only)]
+    pub lines: Vec<LineBuffer>,
+    #[uniform(2)]
     pub screen_size: Vec2,
 }
 
 impl SaikoBuffer {
-    pub const NUMBER_OF_ENTRIES: u32 = 2;
+    // pub const NUMBER_OF_ENTRIES: u32 = 2;
     
     pub fn push_rect(&mut self, rect: impl Into<RectBuffer>) {
         self.rectangles.push(rect.into())
+    }
+    
+    pub fn push_line(&mut self, line: impl Into<LineBuffer>) {
+        self.lines.push(line.into())
     }
 }
 
@@ -86,14 +90,15 @@ impl RectBuffer {
 }
 
 //==============================================================================
-//             ImageBuffer
+//             RectBuffer
 //==============================================================================
 
-#[derive(ShaderType)]
-pub struct GlyphBuffer {
-    bound : Bounds,
-    family : u32,
-    uv : Vec2,
+#[derive(ShaderType, Default)]
+pub struct LineBuffer {
+    pub bounds : Bounds,
+    pub line_style: LineStyleBuffer,
+    pub border_style: BorderStyleBuffer,
+    pub fill_style: FillStyleBuffer,
 }
 
 //==============================================================================
@@ -171,5 +176,20 @@ impl Default for FillStyleBuffer {
         FillStyleBuffer {
             fill_color: Color::WHITE,
         }
+    }
+}
+
+//==============================================================================
+//             LineStyleBuffer
+//==============================================================================
+
+#[derive(ShaderType, Clone, Copy)]
+pub struct LineStyleBuffer {
+    pub thickness: f32,
+}
+
+impl Default for LineStyleBuffer {
+    fn default() -> Self {
+        LineStyleBuffer { thickness: 1.0 }
     }
 }

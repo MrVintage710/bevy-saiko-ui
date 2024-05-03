@@ -10,6 +10,10 @@ struct FillStyle {
     fill_color : vec4<f32>,
 }
 
+struct LineStyle {
+    thickness : f32,
+}
+
 struct Bound {
     center : vec2<f32>,
     size : vec2<f32>,
@@ -22,9 +26,20 @@ struct Rect {
     fill_style: FillStyle,
 };
 
+struct Line {
+    // a : vec2<f32>,
+    // b : vec2<f32>,
+    bound : Bound,
+    line_style : LineStyle,
+    border_style: BorderStyle,
+    fill_style: FillStyle,
+}
+
 @group(0) @binding(0)
 var<storage, read> rect : array<Rect>;
 @group(0) @binding(1)
+var<storage, read> lines : array<Line>;
+@group(0) @binding(2)
 var<uniform> resolution : vec2<f32>;
 
 @group(1) @binding(0)
@@ -37,7 +52,6 @@ fn fragment(
     @builtin(position) pos: vec4<f32>,
     @location(0) uv: vec2<f32>,
 ) -> @location(0) vec4<f32> {
-    var normalized_uv = uv - 0.5;
     var point = resolution * uv;
     point = point - (resolution * 0.5);
     
@@ -50,40 +64,54 @@ fn fragment(
         final_color = select (
             curr_rect.fill_style.fill_color,
             final_color,
-            distance > 0.0
+            distance > 0.0 && curr_rect.bound.z_index >= current_z
         );
         final_color = select (
             final_color,
             curr_rect.border_style.border_color,
-            abs(distance) < curr_rect.border_style.border_width / 2.0
+            abs(distance) < curr_rect.border_style.border_width / 2.0 && curr_rect.bound.z_index >= current_z
+        );
+    }
+    
+    for (var i = 0; i < i32(arrayLength(&lines)); i++) {
+        var curr_line = lines[i];
+        var distance = line_sdf(point, curr_line);
+        final_color = select (
+            curr_line.fill_style.fill_color,
+            final_color,
+            distance > curr_line.line_style.thickness && curr_line.bound.z_index >= current_z
+        );
+        final_color = select (
+            final_color,
+            curr_line.border_style.border_color,
+            abs(distance - curr_line.line_style.thickness) < (curr_line.border_style.border_width / 2.0)  && curr_line.bound.z_index >= current_z
         );
     }
         
-    // return final_color;
-    var color = textureSample(font_atlas, font_atlas_sampler, uv, 0);
-    var distance = median(color.r, color.g, color.b);
-    var screen_distance = 2.5 * (distance - 0.5);
-    var opacity = clamp(screen_distance + 0.5, 0.0, 1.0);
-    return vec4<f32>(1.0, 1.0, 1.0, opacity);
-    
-    
-    // let s = smoothstep(0.0, 1.0, cos(distance));
-    // return vec4<f32>(0.0, 0.0, s, 1.0);
+    // var color = textureSample(font_atlas, font_atlas_sampler, uv, 0);
+    // var distance = median(color.r, color.g, color.b);
+    // var screen_distance = 2.5 * (distance - 0.5);
+    // var opacity = clamp(screen_distance + 0.5, 0.0, 1.0);
+    // return vec4<f32>(1.0, 1.0, 1.0, opacity);
     
     // return select(
     //     vec4<f32>(1.0, 1.0, 1.0, 1.0),
     //     vec4<f32>(0.0, 0.0, 0.0, 1.0),
     //     screen_distance < 0.0
     // );
+    
+    return final_color;
 }
 
 fn median(r : f32, g : f32, b : f32) -> f32 {
     return max(min(r, g), min(max(r, g), b));
 }
 
-fn box_sdf(p : vec2<f32>, bounds : vec2<f32>) -> f32 {
-    var d = abs(p)-bounds;
-    return length(max(d, vec2<f32>(0.0, 0.0))) + min(max(d.x,d.y),0.0);
+fn line_sdf(point : vec2<f32>, line : Line) -> f32 {
+    var pa = point - line.bound.center;
+    var ba = line.bound.size - line.bound.center;
+    var h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return length( pa - h * ba );
 }
 
 fn rounded_box_sdf(point : vec2<f32>, rect : Rect) -> f32 {
