@@ -13,7 +13,7 @@ use bevy::{
     render::{view::RenderLayers, Extract, RenderApp},
 };
 
-use crate::render::{SaikoRenderState, SaikoRenderTarget};
+use crate::render::{font::sdf::SaikoFontSdf, SaikoRenderState, SaikoRenderTarget};
 
 use super::{context::SaikoRenderContext, node::SaikoNode};
 
@@ -62,7 +62,8 @@ impl<T: SaikoComponent> Default for SaikoComponentPlugin<T> {
 
 fn extract_components<T: SaikoComponent>(
     mut render_targets: Query<(&mut SaikoRenderTarget, Option<&RenderLayers>)>,
-    query: Extract<Query<(&T, &SaikoNode, Option<&RenderLayers>, Option<&InheritedVisibility>)>>,
+    query : Extract<Query<(&T, &SaikoNode, Option<&RenderLayers>, Option<&InheritedVisibility>)>>,
+    fonts : Extract<Res<Assets<SaikoFontSdf>>>
 ) {
     for (mut render_target, render_target_layers) in render_targets.iter_mut() {
         for (component, node, component_render_layers, component_visability) in query.iter() {
@@ -77,7 +78,8 @@ fn extract_components<T: SaikoComponent>(
 
             if on_layer && visable {
                 println!("Rendering Component with bounds {:?}", node.bounds());
-                let mut render_context = SaikoRenderContext::new(&mut render_target.1, *node.bounds());
+                //In future releases, this code should happen somewhere else
+                let mut render_context = SaikoRenderContext::new(&mut render_target.1, fonts.as_ref(), *node.bounds());
                 component.render(&mut render_context);
             }
         }

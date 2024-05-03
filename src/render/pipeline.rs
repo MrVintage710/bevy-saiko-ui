@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use bevy::{
     core_pipeline::
         fullscreen_vertex_shader::fullscreen_shader_vertex_state
@@ -5,7 +7,7 @@ use bevy::{
     prelude::*,
     render::{
         render_resource::{
-            binding_types::{sampler, texture_2d}, AddressMode, AsBindGroup, BindGroupLayout, BindGroupLayoutEntries, BlendState, CachedRenderPipelineId, ColorTargetState, ColorWrites, Extent3d, FilterMode, FragmentState, MultisampleState, PipelineCache, PrimitiveState, RenderPipelineDescriptor, Sampler, SamplerBindingType, SamplerDescriptor, ShaderStages, ShaderType, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor
+            binding_types::{sampler, texture_2d}, AddressMode, AsBindGroup, BindGroupLayout, BindGroupLayoutEntries, BindGroupLayoutEntry, BindingType, BlendState, CachedRenderPipelineId, ColorTargetState, ColorWrites, Extent3d, FilterMode, FragmentState, MultisampleState, PipelineCache, PrimitiveState, RenderPipelineDescriptor, Sampler, SamplerBindingType, SamplerDescriptor, ShaderStages, ShaderType, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension
         },
         renderer::RenderDevice,
         texture::{BevyDefault, FallbackImage},
@@ -54,22 +56,57 @@ pub struct SaikoRenderPipeline {
     pub(crate) blit_pipeline: CachedRenderPipelineId,
     pub(crate) bind_group_layout: BindGroupLayout,
     pub(crate) blit_bind_group_layout: BindGroupLayout,
+    pub(crate) font_bind_group_layout: BindGroupLayout,
+    pub(crate) font_sampler: Sampler,
     pub(crate) render_textures: HashMap<Entity, (TextureView, u32, u32)>,
     pub(crate) fallback_image: FallbackImage,
-    pub(crate) fonts : GpuSaikoFonts,
 }
 
 impl FromWorld for SaikoRenderPipeline {
     fn from_world(world: &mut World) -> Self {
-        let fonts = GpuSaikoFonts::from_world(world);
-        
         let fallback_image = FallbackImage::from_world(world);
         let render_device = world.resource::<RenderDevice>();
         
         
         //This is some weird hacky code to get bind group layouts to work
         let bind_group_layout = SaikoBuffer::bind_group_layout(render_device);
-        let font_bind_group_layout = fonts.bind_group_layout();
+        let font_bind_group_layout = render_device.create_bind_group_layout(
+            "SaikoFontAtlasSdf",
+            &[
+                BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Texture { 
+                        sample_type: bevy::render::render_resource::TextureSampleType::Float { filterable: true }, 
+                        view_dimension: TextureViewDimension::D2Array, 
+                        multisampled: false 
+                    },
+                    count: Some(NonZeroU32::new(GpuSaikoFonts::MAX_FONTS).unwrap()),
+                },
+                BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ]
+        );
+        
+        let font_sampler = render_device.create_sampler(&SamplerDescriptor {
+            label: Some("Saiko SDF Font Atlas Sampler"),
+            address_mode_u: AddressMode::ClampToEdge,
+            address_mode_v: AddressMode::ClampToEdge,
+            address_mode_w: AddressMode::ClampToEdge,
+            mag_filter: FilterMode::Linear,
+            min_filter: FilterMode::Linear,
+            // mipmap_filter: todo!(),
+            // lod_min_clamp: todo!(),
+            // lod_max_clamp: todo!(),
+            compare: None,
+            anisotropy_clamp: 1,
+            border_color: None,
+            ..Default::default()
+        });
         
         // let font_atlas_sampler = render_device.create_sampler(&SamplerDescriptor {
         //     label: Some("Saiko SDF Font Atlas Sampler"),
@@ -153,9 +190,10 @@ impl FromWorld for SaikoRenderPipeline {
             blit_pipeline,
             bind_group_layout,
             blit_bind_group_layout,
+            font_bind_group_layout,
+            font_sampler,
             render_textures: HashMap::new(),
-            fallback_image,
-            fonts
+            fallback_image
         }
     }
 }

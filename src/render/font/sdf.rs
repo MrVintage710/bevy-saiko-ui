@@ -1,5 +1,3 @@
-
-
 use std::num::NonZeroU32;
 
 use bevy::{asset::{AssetLoader, AsyncReadExt}, ecs::reflect, math::U16Vec2, prelude::*, render::{render_resource::{AddressMode, BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingResource, BindingType, Extent3d, FilterMode, ImageCopyTexture, ImageDataLayout, Origin3d, Sampler, SamplerBindingType, SamplerDescriptor, ShaderStages, Texture, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension}, renderer::{RenderDevice, RenderQueue}, Extract, RenderApp}, utils::{BoxedFuture, HashMap}};
@@ -12,6 +10,7 @@ use crate::render::pipeline::SaikoRenderPipeline;
 
 use super::SaikoCharacterSet;
 
+pub const DEFAULT_FONT : Handle<SaikoFontSdf> = Handle::weak_from_u128(11068737277721006659);
 
 pub struct SaikoFontSdfPlugin;
 
@@ -28,15 +27,29 @@ impl Plugin for SaikoFontSdfPlugin {
             return;
         };
         
+        
         render_app
             .add_systems( ExtractSchedule, extract_sdf_fonts,)
         ;
     }
 
     fn finish(&self, app: &mut App) {
+        //TODO: Should be relativly fast but could studder the loading. Check for this later and handle accordingling.
+        //This loads and inits the default font for the application.
+        let font = Face::parse(notosans::REGULAR_TTF, 0).expect("SaikoUi : There was an error parsing the default font.");
+        let mut font_atlas = SaikoFontSdf::default();
+        font_atlas.add_glyphs(&font, SaikoCharacterSet::ascii());
+        app.world.get_resource_mut::<Assets<SaikoFontSdf>>().unwrap().insert(DEFAULT_FONT, font_atlas.clone());
+        
         let Ok(render_app) = app.get_sub_app_mut(RenderApp) else {
             return;
         };
+        
+        let render_device = render_app.world.get_resource::<RenderDevice>().unwrap();
+        let render_queue = render_app.world.get_resource::<RenderQueue>().unwrap();
+        
+        let gpu_fonts = GpuSaikoFonts::new(render_device, render_queue, font_atlas);
+        render_app.insert_resource(gpu_fonts);
         
         // render_app.init_resource::<GpuSaikoFonts>();
     }
@@ -48,17 +61,17 @@ impl Plugin for SaikoFontSdfPlugin {
 
 /// This system extracts fonts from the world and puts them into the correct font atlases
 fn extract_sdf_fonts (
-    mut gpu_fonts : ResMut<SaikoRenderPipeline>,
+    mut gpu_fonts : ResMut<GpuSaikoFonts>,
     fonts : Extract<Res<Assets<SaikoFontSdf>>>,
     render_queue : Res<RenderQueue>,
     render_device : Res<RenderDevice>
 ) {
     for (id, font) in fonts.iter() {
-        if gpu_fonts.fonts.contains(&id) || !font.is_dirty {
+        if gpu_fonts.contains(&id) || !font.is_dirty {
             continue;
         }
         
-        let gpu_font = gpu_fonts.fonts.get_or_insert(id, render_device.as_ref());
+        let gpu_font = gpu_fonts.get_or_insert(id, render_device.as_ref());
         if font.is_dirty {
             font.write_to_texture(render_queue.as_ref(), &gpu_font.texture);
         }
@@ -79,7 +92,7 @@ fn reset_fonts(
 
 const FONT_ATLAS_DIMS : u32 = 2048;
 
-#[derive(Asset, Reflect)]
+#[derive(Asset, Reflect, Clone)]
 #[reflect(Default)]
 pub struct SaikoFontSdf {
     #[reflect(ignore)]
@@ -205,6 +218,8 @@ impl SaikoFontSdf {
     pub fn glyph_data(&self, character : char) -> Option<&SaikoGlyphData> {
         self.glyph_data.get(&character)
     }
+    
+    // pub fn shape(&self, text : String)
 }
 
 //==============================================================================
@@ -266,73 +281,62 @@ pub struct GpuSaikoFontSdf {
 //             GpuSaikoFonts
 //==============================================================================
 
+#[derive(Resource)]
 pub struct GpuSaikoFonts {
     default_sdf_font : GpuSaikoFontSdf,
     fonts : HashMap<AssetId<SaikoFontSdf>, GpuSaikoFontSdf>,
-    sampler : Sampler,
-    bind_group_layout : BindGroupLayout,
 }
 
 impl GpuSaikoFonts {
     pub const MAX_FONTS : u32 = 32;
     
-    pub fn new(render_device : &RenderDevice, render_queue : &RenderQueue) -> Self {
+    pub fn new(render_device : &RenderDevice, render_queue : &RenderQueue, default_font : SaikoFontSdf) -> Self {
+        
+        // let font_atlas_sampler = render_device.create_sampler(&SamplerDescriptor {
+        //     label: Some("Saiko SDF Font Atlas Sampler"),
+        //     address_mode_u: AddressMode::ClampToEdge,
+        //     address_mode_v: AddressMode::ClampToEdge,
+        //     address_mode_w: AddressMode::ClampToEdge,
+        //     mag_filter: FilterMode::Linear,
+        //     min_filter: FilterMode::Linear,
+        //     // mipmap_filter: todo!(),
+        //     // lod_min_clamp: todo!(),
+        //     // lod_max_clamp: todo!(),
+        //     compare: None,
+        //     anisotropy_clamp: 1,
+        //     border_color: None,
+        //     ..Default::default()
+        // });
+        
+        // let bind_group_layout = render_device.create_bind_group_layout(
+        //     "SaikoFontAtlasSdf",
+        //     &[
+        //         BindGroupLayoutEntry {
+        //             binding: 0,
+        //             visibility: ShaderStages::FRAGMENT,
+        //             ty: BindingType::Texture { 
+        //                 sample_type: bevy::render::render_resource::TextureSampleType::Float { filterable: true }, 
+        //                 view_dimension: TextureViewDimension::D2Array, 
+        //                 multisampled: false 
+        //             },
+        //             count: Some(NonZeroU32::new(GpuSaikoFonts::MAX_FONTS).unwrap()),
+        //         },
+        //         BindGroupLayoutEntry {
+        //             binding: 1,
+        //             visibility: ShaderStages::FRAGMENT,
+        //             ty: BindingType::Sampler(SamplerBindingType::Filtering),
+        //             count: None,
+        //         },
+        //     ]
+        // );
+        
         let (texture, texture_view) = GpuSaikoFonts::generate_texture(render_device);
-        
-        let Ok(font) = Face::parse(notosans::REGULAR_TTF, 0) else { panic!("Failed to load default font") };
-        let mut font_atlas = SaikoFontSdf::default();
-        
-        font_atlas.add_glyphs(&font, SaikoCharacterSet::ascii());
-        font_atlas.write_to_texture(render_queue, &texture);
-        
-        let font_atlas_sampler = render_device.create_sampler(&SamplerDescriptor {
-            label: Some("Saiko SDF Font Atlas Sampler"),
-            address_mode_u: AddressMode::ClampToEdge,
-            address_mode_v: AddressMode::ClampToEdge,
-            address_mode_w: AddressMode::ClampToEdge,
-            mag_filter: FilterMode::Linear,
-            min_filter: FilterMode::Linear,
-            // mipmap_filter: todo!(),
-            // lod_min_clamp: todo!(),
-            // lod_max_clamp: todo!(),
-            compare: None,
-            anisotropy_clamp: 1,
-            border_color: None,
-            ..Default::default()
-        });
-        
-        let bind_group_layout = render_device.create_bind_group_layout(
-            "SaikoFontAtlasSdf",
-            &[
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::FRAGMENT,
-                    ty: BindingType::Texture { 
-                        sample_type: bevy::render::render_resource::TextureSampleType::Float { filterable: true }, 
-                        view_dimension: TextureViewDimension::D2Array, 
-                        multisampled: false 
-                    },
-                    count: Some(NonZeroU32::new(GpuSaikoFonts::MAX_FONTS).unwrap()),
-                },
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: ShaderStages::FRAGMENT,
-                    ty: BindingType::Sampler(SamplerBindingType::Filtering),
-                    count: None,
-                },
-            ]
-        );
+        default_font.write_to_texture(render_queue, &texture);
         
         Self {
             default_sdf_font: GpuSaikoFontSdf { texture, texture_view},
-            sampler: font_atlas_sampler,
             fonts: HashMap::new(),
-            bind_group_layout,
         }
-    }
-    
-    pub fn bind_group_layout(&self) -> &BindGroupLayout {
-        &self.bind_group_layout
     }
     
     ///This function will get the font texture if it exitsts, or create it if it doesn't.
@@ -375,7 +379,7 @@ impl GpuSaikoFonts {
         (texture, texture_view)
     }
     
-    pub fn create_master_bind(&self, render_device : &RenderDevice) -> BindGroup {
+    pub fn create_master_bind(&self, render_device : &RenderDevice, pipeline : &SaikoRenderPipeline) -> BindGroup {
         //Dereferencing the texture views to get the wpgu texture views
         let mut fonts = vec![&(*self.default_sdf_font.texture_view)];
         for (_, font) in &self.fonts {
@@ -388,7 +392,7 @@ impl GpuSaikoFonts {
         
         render_device.create_bind_group(
             "Saiko Font Bind Group", 
-            &self.bind_group_layout, 
+            &pipeline.font_bind_group_layout, 
             &[
                 BindGroupEntry {
                     binding: 0,
@@ -396,18 +400,10 @@ impl GpuSaikoFonts {
                 },
                 BindGroupEntry {
                     binding: 1,
-                    resource: BindingResource::Sampler(&self.sampler),
+                    resource: BindingResource::Sampler(&pipeline.font_sampler),
                 },
             ]
         )
-    }
-}
-
-impl FromWorld for GpuSaikoFonts {
-    fn from_world(world: &mut World) -> Self {
-        let render_device = world.get_resource::<RenderDevice>().unwrap();
-        let render_queue = world.get_resource::<RenderQueue>().unwrap();
-        Self::new(render_device, render_queue)
     }
 }
 

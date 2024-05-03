@@ -183,6 +183,7 @@ fn prepare_bind_groups(
     mut commands: Commands,
     mut render_targets: Query<(Entity, &mut SaikoRenderTarget, &ViewTarget)>,
     saiko_pipeline: ResMut<SaikoRenderPipeline>,
+    gpu_fonts : Res<GpuSaikoFonts>,
     images: Res<RenderAssets<Image>>,
     render_device: Res<RenderDevice>,
     // font_atlas_data : Res<SaikoGPUFontAtlas>
@@ -215,7 +216,7 @@ fn prepare_bind_groups(
         //     ]
         // );
         
-        let font_bind_group = saiko_pipeline.fonts.create_master_bind(render_device.as_ref());
+        let font_bind_group = gpu_fonts.create_master_bind(render_device.as_ref(), saiko_pipeline.as_ref());
         
         commands
             .entity(render_target_entity)

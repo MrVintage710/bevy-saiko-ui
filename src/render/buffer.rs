@@ -8,7 +8,6 @@ use bevy::{
 
 use crate::common::bounds::Bounds;
 
-use super::font::sdf::{SaikoFontSdf};
 
 pub trait ManualShaderType {
     fn bind_group_layout(render_device : &RenderDevice) -> BindGroupLayout;
@@ -22,6 +21,8 @@ pub trait ManualShaderType {
 pub struct SaikoBuffer {
     #[storage(0, read_only)]
     pub rectangles: Vec<RectBuffer>,
+    // #[storage(1, read_only)]
+    // pub text_glyphs: Vec<TextGlyphBuffer>,
     #[uniform(1)]
     pub screen_size: Vec2,
 }
@@ -91,6 +92,8 @@ impl RectBuffer {
 #[derive(ShaderType)]
 pub struct GlyphBuffer {
     bound : Bounds,
+    family : u32,
+    uv : Vec2,
 }
 
 //==============================================================================
@@ -126,7 +129,7 @@ pub struct GlyphBuffer {
 // }
 
 #[derive(ShaderType)]
-pub struct FontAtlasGlyphBuffer {
+pub struct TextGlyphBuffer {
     pub bound : Bounds,
     pub family : u32,
     pub uv_min : Vec2,
