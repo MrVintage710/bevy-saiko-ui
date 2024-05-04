@@ -68,7 +68,6 @@ fn update_node_bounds(
     primary_window : Query<&Window, With<PrimaryWindow>>
 ) {
     if nodes.iter().next().is_none() { return }
-    println!("Updating Node Bounds");
     
     let Ok(window) = primary_window.get_single() else { return };
     // let window_bounds = Bounds::new(Vec2::ZERO, Vec2::new(window.width(), window.height()), 0);

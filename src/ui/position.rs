@@ -59,8 +59,6 @@ impl RelativePosition {
         width: impl Into<Value>,
         height: impl Into<Value>,
     ) {
-        println!("Parent : {:?}", parent);
-        
         let width = width.into().to_pixels(parent.size.x);
         let height = height.into().to_pixels(parent.size.y);
         let adjusted_width = parent.size.x - width;

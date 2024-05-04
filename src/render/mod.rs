@@ -189,7 +189,6 @@ fn prepare_bind_groups(
     // font_atlas_data : Res<SaikoGPUFontAtlas>
 ) {
     for (render_target_entity, mut render_target, view_target) in render_targets.iter_mut() {
-        println!("Preparing render texture");
         render_target.1.screen_size = Vec2::new(view_target.main_texture().width() as f32, view_target.main_texture().height() as f32);
         
         let Ok(prepared_bind_group) = render_target.1.as_bind_group(

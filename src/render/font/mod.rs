@@ -56,8 +56,6 @@ impl OutlineBuilder for GlyphBuilder {
         
         self.current_pos.x = x;
         self.current_pos.y = y;
-        
-        // println!("M {:?} {:?}", self.current_pos.x, self.current_pos.y);
     }
 
     fn line_to(&mut self, x: f32, y: f32) {
@@ -70,8 +68,6 @@ impl OutlineBuilder for GlyphBuilder {
             end : p2
         });
         self.move_to(x, y);
-        
-        // println!("M {} {} Q {} {} {x} {y} Z", p0.x, p0.y, p1.x, p1.y)
     }
 
     fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
@@ -80,7 +76,6 @@ impl OutlineBuilder for GlyphBuilder {
             control : Vec2::new(x1, y1), 
             end : Vec2::new(x, y)
         });
-        // println!("M {} {} Q {} {} {x} {y} Z", self.current_pos.x, self.current_pos.y, x1, y1);
         self.move_to(x, y);
         
     }

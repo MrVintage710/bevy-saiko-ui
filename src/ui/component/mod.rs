@@ -77,7 +77,6 @@ fn extract_components<T: SaikoComponent>(
             };
 
             if on_layer && visable {
-                println!("Rendering Component with bounds {:?}", node.bounds());
                 //In future releases, this code should happen somewhere else
                 let mut render_context = SaikoRenderContext::new(&mut render_target.1, fonts.as_ref(), *node.bounds());
                 component.render(&mut render_context);
@@ -92,7 +91,6 @@ fn component_change_detection<T: SaikoComponent>(
 ) {
     for (component, node) in components.iter() {
         if T::should_auto_update() && (node.is_changed() || component.is_changed()) {
-            println!("Component Changed");
             render_state.mark_dirty();
         }
     }

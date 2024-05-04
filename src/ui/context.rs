@@ -206,7 +206,6 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextRectStyler<'r> {
 
 impl Drop for SaikoRenderContextRectStyler<'_> {
     fn drop(&mut self) {
-        println!("Rect Z: {}", self.bounds.z_index);
         let mut inner = self.inner.write().unwrap();
         inner.buffer.push_rect(RectBuffer {
             bound : self.bounds,
@@ -307,7 +306,6 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextLineStyler<'r> {
 
 impl Drop for SaikoRenderContextLineStyler<'_> {
     fn drop(&mut self) {
-        println!("Line Z: {}", self.bounds.z_index);
         let mut inner = self.inner.write().unwrap();
         inner.buffer.push_line(LineBuffer {
             bounds : Bounds::new(self.a, self.b, self.bounds.z_index),

@@ -68,7 +68,6 @@ impl ViewNode for SaikoRenderNode {
         //If the shaping data has been loaded into the bind group, render it
         // if let Some(prepared_bind_group) = &saiko_pipeline_resource.bind_groups {
         if let Some(prepared_buffer) = prepared_buffer {
-            println!("Rendering to texture!");
             //Get the bind group from the prepared buffer
             let bind_group = &prepared_buffer.0.bind_group;
             let font_atlas_bind_group = &prepared_buffer.1;

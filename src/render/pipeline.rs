@@ -225,10 +225,6 @@ fn update_pipeline_textures(
             continue;
         }
 
-        println!("Updating Pipeline Render Textures");
-        println!("Texture Width : {} | {}", view_target.main_texture().width(), current_width);
-        println!("Texture Height : {} | {}", view_target.main_texture().height(), current_height);
-
         let texture = render_device.create_texture(&TextureDescriptor {
             label: Some(format!("SaikoUI Render Texture {:?}", view_target_entity).as_str()),
             size: Extent3d {
@@ -252,7 +248,5 @@ fn update_pipeline_textures(
         pipeline
             .render_textures
             .insert(view_target_entity, (texture_view, view_target.main_texture().width(), view_target.main_texture().height()));
-        
-        println!("Render Textures: {}", pipeline.render_textures.len());
     }
 }
