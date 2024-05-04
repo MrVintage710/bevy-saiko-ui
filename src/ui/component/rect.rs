@@ -46,7 +46,7 @@ impl SaikoComponent for RectComponent {
                 .color(self.background_color)
                 .border_color(self.border_color)
                 .border_thickness(self.border_thickness)
-            .relative(500.0, 0.0, 100.0, 100.0).rect()
+            .relative(0.0, 0.0, 100.0, 100.0).rect()
                 .border_radius(self.border_radius)
                 .color(self.background_color)
                 .border_color(self.border_color)

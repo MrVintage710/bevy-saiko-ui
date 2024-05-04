@@ -61,21 +61,58 @@ fn fragment(
     for (var i = 0; i < i32(arrayLength(&rects)); i++) {
         var curr_rect = rects[i];
         var distance = rounded_box_sdf(point, curr_rect);
-        final_color = select (
-            alpha_blend(curr_rect.fill_style.fill_color, final_color),
-            final_color,
-            distance > 0.0 && curr_rect.bound.z_index >= current_z
+        var is_solid = final_color.a == 1.0;
+        var is_over = curr_rect.bound.z_index > current_z;
+        var is_fill = distance < 0.0;
+        var is_border = abs(distance) < curr_rect.border_style.border_width / 2.0;
+        
+        if !is_fill && !is_border || (!is_over && is_solid) {
+            continue;
+        }
+        
+        var color = select (
+            curr_rect.fill_style.fill_color,
+            curr_rect.border_style.border_color,
+            is_border
         );
+        
         final_color = select (
-            final_color,
-            alpha_blend(curr_rect.border_style.border_color, final_color),
-            (abs(distance) < curr_rect.border_style.border_width / 2.0) && curr_rect.bound.z_index >= current_z
+            alpha_blend(final_color, color),
+            alpha_blend(color, final_color),
+            is_over
         );
+        
         current_z = select(
             current_z, 
             curr_rect.bound.z_index, 
-            curr_rect.bound.z_index > current_z && distance <= 0.0
+            curr_rect.bound.z_index > current_z
         );
+        
+        // final_color = select(
+        //     final_color = select (
+        //         alpha_blend(final_color, curr_rect.fill_style.fill_color),
+        //         alpha_blend(curr_rect.fill_style.fill_color, final_color),
+        //         is_over
+        //     ),
+        //     final_color,
+        //     !is_fill && !is_border || (!is_over && is_solid)
+        // );
+        
+        // final_color = select (
+        //     alpha_blend(curr_rect.fill_style.fill_color, final_color),
+        //     final_color,
+        //     distance > 0.0 && curr_rect.bound.z_index >= current_z
+        // );
+        // final_color = select (
+        //     final_color,
+        //     alpha_blend(curr_rect.border_style.border_color, final_color),
+        //     (abs(distance) < curr_rect.border_style.border_width / 2.0) && curr_rect.bound.z_index >= current_z
+        // );
+        // current_z = select(
+        //     current_z, 
+        //     curr_rect.bound.z_index, 
+        //     curr_rect.bound.z_index > current_z && distance <= 0.0
+        // );
     }
     
     
