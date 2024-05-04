@@ -20,7 +20,7 @@ struct Bound {
     z_index : i32,
 }
 
-struct Rect {
+struct SimpleShape {
     bound : Bound,
     border_style: BorderStyle,
     fill_style: FillStyle,
@@ -36,10 +36,12 @@ struct Line {
 }
 
 @group(0) @binding(0)
-var<storage, read> rects : array<Rect>;
+var<storage, read> rects : array<SimpleShape>;
 @group(0) @binding(1)
-var<storage, read> lines : array<Line>;
+var<storage, read> circles : array<SimpleShape>;
 @group(0) @binding(2)
+var<storage, read> lines : array<Line>;
+@group(0) @binding(3)
 var<uniform> resolution : vec2<f32>;
 
 @group(1) @binding(0)
@@ -60,7 +62,7 @@ fn fragment(
     //Check this pixel for all rectangles
     for (var i = 0; i < i32(arrayLength(&rects)); i++) {
         var curr_rect = rects[i];
-        var distance = rounded_box_sdf(point, curr_rect);
+        var distance = rect_sdf(point, curr_rect);
         var is_solid = final_color.a == 1.0;
         var is_over = curr_rect.bound.z_index > current_z;
         var is_fill = distance < 0.0;
@@ -87,32 +89,37 @@ fn fragment(
             curr_rect.bound.z_index, 
             curr_rect.bound.z_index > current_z
         );
+    }
+    
+    for (var i = 0; i < i32(arrayLength(&rects)); i++) {
+        var curr_circle = circles[i];
+        var distance = circle_sdf(point, curr_circle);
+        var is_solid = final_color.a == 1.0;
+        var is_over = curr_circle.bound.z_index > current_z;
+        var is_fill = distance < 0.0;
+        var is_border = abs(distance) < curr_circle.border_style.border_width / 2.0;
         
-        // final_color = select(
-        //     final_color = select (
-        //         alpha_blend(final_color, curr_rect.fill_style.fill_color),
-        //         alpha_blend(curr_rect.fill_style.fill_color, final_color),
-        //         is_over
-        //     ),
-        //     final_color,
-        //     !is_fill && !is_border || (!is_over && is_solid)
-        // );
+        if !is_fill && !is_border || (!is_over && is_solid) {
+            continue;
+        }
         
-        // final_color = select (
-        //     alpha_blend(curr_rect.fill_style.fill_color, final_color),
-        //     final_color,
-        //     distance > 0.0 && curr_rect.bound.z_index >= current_z
-        // );
-        // final_color = select (
-        //     final_color,
-        //     alpha_blend(curr_rect.border_style.border_color, final_color),
-        //     (abs(distance) < curr_rect.border_style.border_width / 2.0) && curr_rect.bound.z_index >= current_z
-        // );
-        // current_z = select(
-        //     current_z, 
-        //     curr_rect.bound.z_index, 
-        //     curr_rect.bound.z_index > current_z && distance <= 0.0
-        // );
+        var color = select (
+            curr_circle.fill_style.fill_color,
+            curr_circle.border_style.border_color,
+            is_border
+        );
+        
+        final_color = select (
+            alpha_blend(final_color, color),
+            alpha_blend(color, final_color),
+            is_over
+        );
+        
+        current_z = select(
+            current_z, 
+            curr_circle.bound.z_index, 
+            curr_circle.bound.z_index > current_z
+        );
     }
     
     
@@ -144,32 +151,13 @@ fn fragment(
             curr_line.bound.z_index, 
             curr_line.bound.z_index > current_z
         );
-        
-        // final_color = select (
-        //     final_color,
-        //     alpha_blend(curr_line.fill_style.fill_color, final_color),
-        //     // select(vec4<f32>(1.0, 0.0, 0.0, 1.0), vec4<f32>(0.0, 1.0, 0.0, 1.0), curr_line.bound.z_index >= current_z),
-        //     distance < curr_line.line_style.thickness 
-        //     // && curr_line.bound.z_index >= current_z
-        // );
-        // final_color = select (
-        //     final_color,
-        //     alpha_blend(curr_line.border_style.border_color, final_color),
-        //     abs(distance - curr_line.line_style.thickness) < (curr_line.border_style.border_width / 2.0) 
-        //     // && curr_line.bound.z_index >= current_z
-        // );
-        // current_z = select(
-        //     current_z, 
-        //     curr_line.bound.z_index, 
-        //     curr_line.bound.z_index > current_z
-        // );
     }
     
     return final_color;
 }
 
-// Mix colors with respect to their alpha's. 
-// From https://stackoverflow.com/questions/28900598/how-to-combine-two-colors-with-varying-alpha-values
+
+// Mix colors with respect to their alpha's.
 fn alpha_blend(foreground_color : vec4<f32>, background_color : vec4<f32>) -> vec4<f32> {
     var alpha = clamp(foreground_color.a + background_color.a, 0.0, 1.0);
     var rgb = (1.0 - foreground_color.a) * background_color.rgb + foreground_color.a * foreground_color.rgb;
@@ -189,7 +177,7 @@ fn line_sdf(point : vec2<f32>, line : Line) -> f32 {
     return length( pa - h * ba );
 }
 
-fn rounded_box_sdf(point : vec2<f32>, rect : Rect) -> f32 {
+fn rect_sdf(point : vec2<f32>, rect : SimpleShape) -> f32 {
     var size = (rect.bound.size * 1.0);
     var p = point - (rect.bound.center * vec2<f32>(1.0, -1.0));
     var r = select(rect.border_style.border_radius.xy, rect.border_style.border_radius.zw, p.x > 0.0);
@@ -197,4 +185,9 @@ fn rounded_box_sdf(point : vec2<f32>, rect : Rect) -> f32 {
     r = min(r, size);
     var q = abs(p) - size + r.x;
     return min(max(q.x, q.y), 0.0) + length(max(q, vec2<f32>(0.0, 0.0))) - r.x;
+}
+
+fn circle_sdf(point : vec2<f32>, circle : SimpleShape) -> f32 {
+    var p = point - circle.bound.center * vec2<f32>(1.0, -1.0);
+    return length(p) - circle.bound.size.x;
 }

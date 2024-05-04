@@ -169,6 +169,7 @@ fn extract_cameras_for_render(
     ui_dirty: Extract<Res<SaikoRenderState>>,
 ) {
     if ui_dirty.is_dirty() || !*has_initialized {
+        println!("Rendering SaikoUI");
         for (entity, render_layers) in cameras.iter() {
             let mut cam_entity = commands.get_or_spawn(entity);
             let render_layers = render_layers.map(|value| value.clone());

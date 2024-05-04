@@ -2,7 +2,7 @@ use std::{rc::Rc, sync::RwLock};
 
 use bevy::{asset::{Assets, Handle}, math::{Vec2, Vec4}, render::color::Color, text::Font};
 
-use crate::{common::{bounds::Bounds, value::{Percent, Value}}, render::{buffer::{BorderStyleBuffer, FillStyleBuffer, LineBuffer, LineStyleBuffer, RectBuffer, SaikoBuffer}, font::sdf::{SaikoFontSdf, DEFAULT_FONT}}};
+use crate::{common::{bounds::Bounds, value::{Percent, Value}}, render::{buffer::{BorderStyleBuffer, FillStyleBuffer, LineBuffer, LineStyleBuffer, SimpleShapeBuffer, SaikoBuffer}, font::sdf::{SaikoFontSdf, DEFAULT_FONT}}};
 
 use super::position::RelativePosition;
 
@@ -13,6 +13,7 @@ use super::position::RelativePosition;
 pub struct SaikoInnerContext<'r> {
     buffer : &'r mut SaikoBuffer,
     fonts : &'r Assets<SaikoFontSdf>,
+    should_debug : bool
 }
 
 //==============================================================================
@@ -26,7 +27,7 @@ pub struct SaikoRenderContext<'r> {
 
 impl <'r> SaikoRenderContext<'r> {
     pub fn new(buffer: &'r mut SaikoBuffer, fonts: &'r Assets<SaikoFontSdf>, bounds: Bounds) -> Self {
-        Self { inner : Rc::new(RwLock::new(SaikoInnerContext { buffer, fonts })) , bounds }
+        Self { inner : Rc::new(RwLock::new(SaikoInnerContext { buffer, fonts, should_debug : false})) , bounds }
     }
 
     pub fn len(&self) -> usize {
@@ -39,7 +40,7 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContext<'r> {
         &self.bounds
     }
 
-    fn get_inner(&mut self) -> Rc<RwLock<SaikoInnerContext<'r>>> {
+    fn get_inner(&self) -> Rc<RwLock<SaikoInnerContext<'r>>> {
         self.inner.clone()
     }
 }
@@ -53,7 +54,7 @@ impl <'r> Drop for SaikoRenderContext<'r> {
 //==============================================================================
 
 pub trait SaikoRenderContextExtention<'r> : Drop {
-    fn get_inner(&mut self) -> Rc<RwLock<SaikoInnerContext<'r>>>;
+    fn get_inner(&self) -> Rc<RwLock<SaikoInnerContext<'r>>>;
     
     fn get_bounds(&self) -> &Bounds;
     
@@ -73,6 +74,15 @@ pub trait SaikoRenderContextExtention<'r> : Drop {
     
     fn rect(&mut self) -> SaikoRenderContextRectStyler<'r> {
         SaikoRenderContextRectStyler {
+            bounds: self.get_next_bounds(),
+            inner : self.get_inner(),
+            border_style: BorderStyleBuffer::default(),
+            fill_style: FillStyleBuffer::default(),
+        }
+    }
+    
+    fn circle(&mut self) -> SaikoRenderContextCircleStyler<'r> {
+        SaikoRenderContextCircleStyler {
             bounds: self.get_next_bounds(),
             inner : self.get_inner(),
             border_style: BorderStyleBuffer::default(),
@@ -120,6 +130,12 @@ pub trait SaikoRenderContextExtention<'r> : Drop {
         SaikoRenderContext {
             bounds: RelativePosition::create_align(&self.get_next_bounds(), horizontal, vertical, width, height),
             inner: self.get_inner(),
+        }
+    }
+    
+    fn toggle_debug(&mut self) {
+        if let Ok(mut inner) = self.get_inner().try_write() {
+            inner.should_debug = !inner.should_debug;
         }
     }
     
@@ -199,7 +215,7 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextRectStyler<'r> {
         &self.bounds
     }
 
-    fn get_inner(&mut self) -> Rc<RwLock<SaikoInnerContext<'r>>> {
+    fn get_inner(&self) -> Rc<RwLock<SaikoInnerContext<'r>>> {
         self.inner.clone()
     }
 }
@@ -207,7 +223,62 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextRectStyler<'r> {
 impl Drop for SaikoRenderContextRectStyler<'_> {
     fn drop(&mut self) {
         let mut inner = self.inner.write().unwrap();
-        inner.buffer.push_rect(RectBuffer {
+        inner.buffer.push_rect(SimpleShapeBuffer {
+            bound : self.bounds,
+            border_style: self.border_style,
+            fill_style: self.fill_style
+        });
+    }
+}
+
+//==============================================================================
+//             SaikoRenderContextRectStyler
+//==============================================================================
+
+pub struct SaikoRenderContextCircleStyler<'r> {
+    inner : Rc<RwLock<SaikoInnerContext<'r>>>,
+    bounds : Bounds,
+    border_style : BorderStyleBuffer,
+    fill_style : FillStyleBuffer
+}
+
+impl <'r> SaikoRenderContextCircleStyler<'r> {
+
+    pub fn color(mut self, color : impl Into<Color>) -> Self {
+        self.fill_style.fill_color = color.into();
+        self
+    }
+    
+    pub fn border_color(mut self, color : impl Into<Color>) -> Self {
+        self.border_style.border_color = color.into();
+        self
+    }
+    
+    pub fn border_thickness(mut self, width : f32) -> Self {
+        self.border_style.border_width = width;
+        self
+    }
+    
+    pub fn border_radius(mut self, radius : impl Into<Vec4>) -> Self {
+        self.border_style.border_radius = radius.into();
+        self
+    }
+}
+
+impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextCircleStyler<'r> {
+    fn get_bounds(&self) -> &Bounds {
+        &self.bounds
+    }
+
+    fn get_inner(&self) -> Rc<RwLock<SaikoInnerContext<'r>>> {
+        self.inner.clone()
+    }
+}
+
+impl Drop for SaikoRenderContextCircleStyler<'_> {
+    fn drop(&mut self) {
+        let mut inner = self.inner.write().unwrap();
+        inner.buffer.push_circle(SimpleShapeBuffer {
             bound : self.bounds,
             border_style: self.border_style,
             fill_style: self.fill_style
@@ -238,7 +309,7 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextTextStyler<'r> {
         &self.bounds
     }
     
-    fn get_inner(&mut self) -> Rc<RwLock<SaikoInnerContext<'r>>> {
+    fn get_inner(&self) -> Rc<RwLock<SaikoInnerContext<'r>>> {
         self.inner.clone()
     }
 }
@@ -299,7 +370,7 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextLineStyler<'r> {
         &self.bounds
     }
     
-    fn get_inner(&mut self) -> Rc<RwLock<SaikoInnerContext<'r>>> {
+    fn get_inner(&self) -> Rc<RwLock<SaikoInnerContext<'r>>> {
         self.inner.clone()
     }
 }

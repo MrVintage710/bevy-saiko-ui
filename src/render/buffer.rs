@@ -20,18 +20,24 @@ pub trait ManualShaderType {
 #[derive(AsBindGroup, Default)]
 pub struct SaikoBuffer {
     #[storage(0, read_only)]
-    pub rectangles: Vec<RectBuffer>,
+    pub rectangles: Vec<SimpleShapeBuffer>,
     #[storage(1, read_only)]
+    pub circles: Vec<SimpleShapeBuffer>,
+    #[storage(2, read_only)]
     pub lines: Vec<LineBuffer>,
-    #[uniform(2)]
+    #[uniform(3)]
     pub screen_size: Vec2,
 }
 
 impl SaikoBuffer {
     // pub const NUMBER_OF_ENTRIES: u32 = 2;
     
-    pub fn push_rect(&mut self, rect: impl Into<RectBuffer>) {
+    pub fn push_rect(&mut self, rect: impl Into<SimpleShapeBuffer>) {
         self.rectangles.push(rect.into())
+    }
+    
+    pub fn push_circle(&mut self, circle: impl Into<SimpleShapeBuffer>) {
+        self.circles.push(circle.into())
     }
     
     pub fn push_line(&mut self, line: impl Into<LineBuffer>) {
@@ -50,14 +56,15 @@ pub struct SaikoPreparedBuffer(pub PreparedBindGroup<()>, pub BindGroup);
 //             RectBuffer
 //==============================================================================
 
+/// This is a buffer that describes any shape thato fits in a bounds and is styled with a fill and border.
 #[derive(ShaderType, Default)]
-pub struct RectBuffer {
+pub struct SimpleShapeBuffer {
     pub bound : Bounds,
     pub border_style: BorderStyleBuffer,
     pub fill_style: FillStyleBuffer,
 }
 
-impl RectBuffer {
+impl SimpleShapeBuffer {
     pub fn with_position(mut self, position: impl Into<Vec2>) -> Self {
         self.bound.center = position.into();
         self
