@@ -19,6 +19,8 @@ pub struct RectComponent {
     border_thickness: f32,
     background_color: Color,
     border_color: Color,
+    line_thickness: f32,
+    line_color: Color,
 }
 
 impl Default for RectComponent {
@@ -26,8 +28,10 @@ impl Default for RectComponent {
         RectComponent {
             border_radius: Vec4::new(10.0, 10.0, 10.0, 10.0),
             border_thickness: 5.0,
-            background_color: Color::rgba_u8(31, 33, 49, 255),
+            background_color: Color::rgba_u8(31, 33, 49, 155),
             border_color: Color::rgba_u8(246, 92, 57, 255),
+            line_thickness: 5.0,
+            line_color: Color::rgba_u8(246, 92, 57, 255),
         }
     }
 }
@@ -35,18 +39,17 @@ impl Default for RectComponent {
 impl SaikoComponent for RectComponent {
     fn render(&self, context: &mut SaikoRenderContext<'_>) {
         context
-            .line((0.0, -100.0), (0.0, 100.0)).color(Color::RED.with_a(0.5)).thickness(10.0).border_thickness(4.0)
-            .line((-100.0, 0.0), (100.0, 0.0)).color(Color::RED)
+            .line((-500.0, 0.0), (500.0, 0.0)).color(self.line_color).thickness(self.line_thickness).border_thickness(0.0)
+            .line((0.0, -100.0), (0.0, 100.0)).color(self.line_color).thickness(self.line_thickness).border_thickness(0.0)
             .rect()
                 .border_radius(self.border_radius)
                 .color(self.background_color)
                 .border_color(self.border_color)
                 .border_thickness(self.border_thickness)
-            // .relative(100.0 + self.border_thickness / 2.0, 0.0, 100.0, 100.0).rect()
-            //     .border_radius(self.border_radius)
-            //     .color(self.background_color)
-            //     .border_color(self.border_color)
-            //     .border_width(self.border_thickness)
+            .relative(500.0, 0.0, 100.0, 100.0).rect()
+                .border_radius(self.border_radius)
+                .color(self.background_color)
+                .border_color(self.border_color)
         ;
     }
 }

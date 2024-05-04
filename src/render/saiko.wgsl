@@ -17,7 +17,7 @@ struct LineStyle {
 struct Bound {
     center : vec2<f32>,
     size : vec2<f32>,
-    z_index : f32,
+    z_index : i32,
 }
 
 struct Rect {
@@ -36,7 +36,7 @@ struct Line {
 }
 
 @group(0) @binding(0)
-var<storage, read> rect : array<Rect>;
+var<storage, read> rects : array<Rect>;
 @group(0) @binding(1)
 var<storage, read> lines : array<Line>;
 @group(0) @binding(2)
@@ -49,58 +49,94 @@ var font_atlas_sampler : sampler;
 
 @fragment
 fn fragment( 
-    @builtin(position) pos: vec4<f32>,
     @location(0) uv: vec2<f32>,
 ) -> @location(0) vec4<f32> {
-    var point = resolution * uv;
+    var point = (resolution * uv);
     point = point - (resolution * 0.5);
     
-    var current_z = 0.0;
+    var current_z = 0;
     var final_color = vec4<f32>(0.0, 0.0, 0.0, 0.0);
     
-    for (var i = 0; i < i32(arrayLength(&rect)); i++) {
-        var curr_rect = rect[i];
+    //Check this pixel for all rectangles
+    for (var i = 0; i < i32(arrayLength(&rects)); i++) {
+        var curr_rect = rects[i];
         var distance = rounded_box_sdf(point, curr_rect);
         final_color = select (
-            curr_rect.fill_style.fill_color,
+            alpha_blend(curr_rect.fill_style.fill_color, final_color),
             final_color,
             distance > 0.0 && curr_rect.bound.z_index >= current_z
         );
         final_color = select (
             final_color,
-            curr_rect.border_style.border_color,
-            abs(distance) < curr_rect.border_style.border_width / 2.0 && curr_rect.bound.z_index >= current_z
+            alpha_blend(curr_rect.border_style.border_color, final_color),
+            (abs(distance) < curr_rect.border_style.border_width / 2.0) && curr_rect.bound.z_index >= current_z
+        );
+        current_z = select(
+            current_z, 
+            curr_rect.bound.z_index, 
+            curr_rect.bound.z_index > current_z && distance <= 0.0
         );
     }
+    
     
     for (var i = 0; i < i32(arrayLength(&lines)); i++) {
         var curr_line = lines[i];
         var distance = line_sdf(point, curr_line);
-        final_color = select (
-            curr_line.fill_style.fill_color,
-            final_color,
-            distance > curr_line.line_style.thickness && curr_line.bound.z_index >= current_z
-        );
-        final_color = select (
-            final_color,
-            curr_line.border_style.border_color,
-            abs(distance - curr_line.line_style.thickness) < (curr_line.border_style.border_width / 2.0)  && curr_line.bound.z_index >= current_z
-        );
-    }
+        var is_solid = final_color.a == 1.0;
+        var is_over = curr_line.bound.z_index > current_z;
+        var is_fill = distance < curr_line.line_style.thickness;
+        var is_border = abs(distance - curr_line.line_style.thickness) < (curr_line.border_style.border_width / 2.0);
+        if !is_fill && !is_border || (!is_over && is_solid) {
+            continue;
+        }
         
-    // var color = textureSample(font_atlas, font_atlas_sampler, uv, 0);
-    // var distance = median(color.r, color.g, color.b);
-    // var screen_distance = 2.5 * (distance - 0.5);
-    // var opacity = clamp(screen_distance + 0.5, 0.0, 1.0);
-    // return vec4<f32>(1.0, 1.0, 1.0, opacity);
-    
-    // return select(
-    //     vec4<f32>(1.0, 1.0, 1.0, 1.0),
-    //     vec4<f32>(0.0, 0.0, 0.0, 1.0),
-    //     screen_distance < 0.0
-    // );
+        var color = select (
+            curr_line.fill_style.fill_color,
+            curr_line.border_style.border_color,
+            is_border
+        );
+        
+        final_color = select (
+            alpha_blend(final_color, color),
+            alpha_blend(color, final_color),
+            is_over
+        );
+        
+        current_z = select(
+            current_z, 
+            curr_line.bound.z_index, 
+            curr_line.bound.z_index > current_z
+        );
+        
+        // final_color = select (
+        //     final_color,
+        //     alpha_blend(curr_line.fill_style.fill_color, final_color),
+        //     // select(vec4<f32>(1.0, 0.0, 0.0, 1.0), vec4<f32>(0.0, 1.0, 0.0, 1.0), curr_line.bound.z_index >= current_z),
+        //     distance < curr_line.line_style.thickness 
+        //     // && curr_line.bound.z_index >= current_z
+        // );
+        // final_color = select (
+        //     final_color,
+        //     alpha_blend(curr_line.border_style.border_color, final_color),
+        //     abs(distance - curr_line.line_style.thickness) < (curr_line.border_style.border_width / 2.0) 
+        //     // && curr_line.bound.z_index >= current_z
+        // );
+        // current_z = select(
+        //     current_z, 
+        //     curr_line.bound.z_index, 
+        //     curr_line.bound.z_index > current_z
+        // );
+    }
     
     return final_color;
+}
+
+// Mix colors with respect to their alpha's. 
+// From https://stackoverflow.com/questions/28900598/how-to-combine-two-colors-with-varying-alpha-values
+fn alpha_blend(foreground_color : vec4<f32>, background_color : vec4<f32>) -> vec4<f32> {
+    var alpha = clamp(foreground_color.a + background_color.a, 0.0, 1.0);
+    var rgb = (1.0 - foreground_color.a) * background_color.rgb + foreground_color.a * foreground_color.rgb;
+    return vec4<f32>(rgb, alpha);
 }
 
 fn median(r : f32, g : f32, b : f32) -> f32 {
@@ -108,8 +144,10 @@ fn median(r : f32, g : f32, b : f32) -> f32 {
 }
 
 fn line_sdf(point : vec2<f32>, line : Line) -> f32 {
-    var pa = point - line.bound.center;
-    var ba = line.bound.size - line.bound.center;
+    var a = line.bound.center * vec2<f32>(1.0, -1.0);
+    var b = line.bound.size * vec2<f32>(1.0, -1.0);
+    var pa = point - a;
+    var ba = b - a;
     var h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
     return length( pa - h * ba );
 }

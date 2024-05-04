@@ -57,6 +57,12 @@ pub trait SaikoRenderContextExtention<'r> : Drop {
     
     fn get_bounds(&self) -> &Bounds;
     
+    fn get_next_bounds(&self) -> Bounds {
+        let mut bounds = *self.get_bounds();
+        bounds.z_index += 1;
+        bounds
+    }
+    
     fn width(&self) -> f32 {
         self.get_bounds().size.x
     }
@@ -67,7 +73,7 @@ pub trait SaikoRenderContextExtention<'r> : Drop {
     
     fn rect(&mut self) -> SaikoRenderContextRectStyler<'r> {
         SaikoRenderContextRectStyler {
-            bounds: *self.get_bounds(),
+            bounds: self.get_next_bounds(),
             inner : self.get_inner(),
             border_style: BorderStyleBuffer::default(),
             fill_style: FillStyleBuffer::default(),
@@ -75,20 +81,22 @@ pub trait SaikoRenderContextExtention<'r> : Drop {
     }
     
     fn line(&mut self, a : impl Into<Vec2>, b : impl Into<Vec2>) -> SaikoRenderContextLineStyler<'r> {
+        let mut border_style = BorderStyleBuffer::default();
+        border_style.border_width = 0.0;
         SaikoRenderContextLineStyler {
-            bounds: *self.get_bounds(),
+            bounds: self.get_next_bounds(),
             inner : self.get_inner(),
             a : a.into() + self.get_bounds().center,
             b : b.into() + self.get_bounds().center,
             line_style: LineStyleBuffer::default(),
-            border_style: BorderStyleBuffer::default(),
+            border_style,
             fill_style: FillStyleBuffer::default(),
         }
     }
     
     fn text(&mut self, text : &str) -> SaikoRenderContextTextStyler<'r> {
         SaikoRenderContextTextStyler {
-            bounds: *self.get_bounds(),
+            bounds: self.get_next_bounds(),
             inner : self.get_inner(),
             text: text.to_string(),
             font: None,
@@ -110,7 +118,7 @@ pub trait SaikoRenderContextExtention<'r> : Drop {
     
     fn align(&mut self, horizontal : impl Into<Percent>, vertical : impl Into<Percent>, width : impl Into<Value>, height : impl Into<Value>) -> SaikoRenderContext<'r> {
         SaikoRenderContext {
-            bounds: RelativePosition::create_align(self.get_bounds(), horizontal, vertical, width, height),
+            bounds: RelativePosition::create_align(&self.get_next_bounds(), horizontal, vertical, width, height),
             inner: self.get_inner(),
         }
     }
@@ -198,6 +206,7 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextRectStyler<'r> {
 
 impl Drop for SaikoRenderContextRectStyler<'_> {
     fn drop(&mut self) {
+        println!("Rect Z: {}", self.bounds.z_index);
         let mut inner = self.inner.write().unwrap();
         inner.buffer.push_rect(RectBuffer {
             bound : self.bounds,
@@ -275,8 +284,8 @@ impl <'r> SaikoRenderContextLineStyler<'r> {
         self
     }
     
-    pub fn border_thickness(mut self, width : f32) -> Self {
-        self.border_style.border_width = width;
+    pub fn border_thickness(mut self, thickness : f32) -> Self {
+        self.border_style.border_width = thickness;
         self
     }
     
@@ -298,6 +307,7 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextLineStyler<'r> {
 
 impl Drop for SaikoRenderContextLineStyler<'_> {
     fn drop(&mut self) {
+        println!("Line Z: {}", self.bounds.z_index);
         let mut inner = self.inner.write().unwrap();
         inner.buffer.push_line(LineBuffer {
             bounds : Bounds::new(self.a, self.b, self.bounds.z_index),
