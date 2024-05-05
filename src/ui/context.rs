@@ -73,29 +73,35 @@ pub trait SaikoRenderContextExtention<'r> : Drop {
     }
     
     fn rect(&mut self) -> SaikoRenderContextRectStyler<'r> {
+        let inner = self.get_inner();
+        inner.write().unwrap().should_debug = false;
         SaikoRenderContextRectStyler {
             bounds: self.get_next_bounds(),
-            inner : self.get_inner(),
+            inner,
             border_style: BorderStyleBuffer::default(),
             fill_style: FillStyleBuffer::default(),
         }
     }
     
     fn circle(&mut self) -> SaikoRenderContextCircleStyler<'r> {
+        let inner = self.get_inner();
+        inner.write().unwrap().should_debug = false;
         SaikoRenderContextCircleStyler {
             bounds: self.get_next_bounds(),
-            inner : self.get_inner(),
+            inner,
             border_style: BorderStyleBuffer::default(),
             fill_style: FillStyleBuffer::default(),
         }
     }
     
     fn line(&mut self, a : impl Into<Vec2>, b : impl Into<Vec2>) -> SaikoRenderContextLineStyler<'r> {
+        let inner = self.get_inner();
+        inner.write().unwrap().should_debug = false;
         let mut border_style = BorderStyleBuffer::default();
         border_style.border_width = 0.0;
         SaikoRenderContextLineStyler {
             bounds: self.get_next_bounds(),
-            inner : self.get_inner(),
+            inner,
             a : a.into() + self.get_bounds().center,
             b : b.into() + self.get_bounds().center,
             line_style: LineStyleBuffer::default(),
@@ -105,9 +111,11 @@ pub trait SaikoRenderContextExtention<'r> : Drop {
     }
     
     fn text(&mut self, text : &str) -> SaikoRenderContextTextStyler<'r> {
+        let inner = self.get_inner();
+        inner.write().unwrap().should_debug = false;
         SaikoRenderContextTextStyler {
             bounds: self.get_next_bounds(),
-            inner : self.get_inner(),
+            inner,
             text: text.to_string(),
             font: None,
         }
@@ -133,9 +141,9 @@ pub trait SaikoRenderContextExtention<'r> : Drop {
         }
     }
     
-    fn toggle_debug(&mut self) {
+    fn debug(&mut self) {
         if let Ok(mut inner) = self.get_inner().try_write() {
-            inner.should_debug = !inner.should_debug;
+            inner.should_debug = true;
         }
     }
     
@@ -222,12 +230,21 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextRectStyler<'r> {
 
 impl Drop for SaikoRenderContextRectStyler<'_> {
     fn drop(&mut self) {
+        if self.inner.read().unwrap().should_debug {
+            self
+                .line((-25.0, 0.0), (25.0, 0.0)).color(Color::RED)
+                .line((0.0, -25.0), (0.0, 25.0)).color(Color::RED)
+                .align_center(10.0, 10.0).circle().color(Color::RED).border_thickness(0.0)
+            ;
+        }
+        
         let mut inner = self.inner.write().unwrap();
         inner.buffer.push_rect(SimpleShapeBuffer {
             bound : self.bounds,
             border_style: self.border_style,
             fill_style: self.fill_style
         });
+        
     }
 }
 
