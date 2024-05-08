@@ -1,8 +1,9 @@
 use std::{rc::Rc, sync::RwLock};
 
 use bevy::{asset::{Assets, Handle}, math::{Vec2, Vec4}, render::color::Color, text::Font};
+use cosmic_text::Buffer;
 
-use crate::{common::{bounds::Bounds, value::{Percent, Value}}, render::{buffer::{BorderStyleBuffer, FillStyleBuffer, LineBuffer, LineStyleBuffer, SimpleShapeBuffer, SaikoBuffer}, font::sdf::{SaikoFontSdf, DEFAULT_FONT}}};
+use crate::{common::{bounds::Bounds, value::{Percent, Value}, TextHorizontalAlign, TextVerticalAlign}, render::{buffer::{BorderStyleBuffer, FillStyleBuffer, LineBuffer, LineStyleBuffer, SaikoBuffer, SimpleShapeBuffer}, font::sdf::{SaikoFontSdf, DEFAULT_FONT}}};
 
 use super::position::RelativePosition;
 
@@ -117,6 +118,8 @@ pub trait SaikoRenderContextExtention<'r> : Drop {
             bounds: self.get_next_bounds(),
             inner,
             text: text.to_string(),
+            horizontal_align: TextHorizontalAlign::Left,
+            vertical_align : TextVerticalAlign::Top,
             font: None,
         }
     }
@@ -196,7 +199,6 @@ pub struct SaikoRenderContextRectStyler<'r> {
 }
 
 impl <'r> SaikoRenderContextRectStyler<'r> {
-
     pub fn color(mut self, color : impl Into<Color>) -> Self {
         self.fill_style.fill_color = color.into();
         self
@@ -312,11 +314,23 @@ pub struct SaikoRenderContextTextStyler<'r> {
     text : String,
     font : Option<Handle<SaikoFontSdf>>,
     bounds : Bounds,
+    horizontal_align : TextHorizontalAlign,
+    vertical_align : TextVerticalAlign
 }
 
 impl <'r> SaikoRenderContextTextStyler<'r> {
     pub fn font(mut self, font : Handle<SaikoFontSdf>) -> Self {
         self.font = Some(font);
+        self
+    }
+    
+    pub fn horizontal_align(mut self, align : TextHorizontalAlign) -> Self {
+        self.horizontal_align = align;
+        self
+    }
+    
+    pub fn vertical_align(mut self, align : TextVerticalAlign) -> Self {
+        self.vertical_align = align;
         self
     }
 }
@@ -333,11 +347,17 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextTextStyler<'r> {
 
 impl Drop for SaikoRenderContextTextStyler<'_> {
     fn drop(&mut self) {
+        // if self.inner.read().unwrap().should_debug {
+        //     self
+                
+        //     ;
+        // }
+        
         let mut inner = self.inner.write().unwrap();
         let font_handle = self.font.clone().unwrap_or(DEFAULT_FONT);
         let font = inner.fonts.get(font_handle).expect("While rendering text, tried to render a font that doesn't exist.");
         
-        
+        // let buffer = Buffer::new(font_system, metrics)
     }
 }
 

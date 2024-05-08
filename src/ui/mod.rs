@@ -2,6 +2,7 @@ pub mod component;
 pub mod node;
 pub mod context;
 pub mod position;
+pub mod shaping;
 
 use bevy::prelude::*;
 

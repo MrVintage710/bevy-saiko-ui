@@ -22,3 +22,25 @@ impl Plugin for SaikoUiCommonPlugin {
 
 #[derive(Event)]
 pub struct MarkSaikoUiDirty;
+
+//==============================================================================
+//          Text Alignment
+//==============================================================================
+
+#[derive(Reflect, Clone, Copy, PartialEq, Eq, Debug)]
+pub enum TextHorizontalAlign {
+    Left,
+    Center,
+    Right
+}
+
+#[derive(Reflect, Clone, Copy, PartialEq, Eq, Debug)]
+pub enum TextVerticalAlign {
+    Top,
+    Center,
+    Bottom
+}
+
+//==============================================================================
+//          Common Events
+//==============================================================================

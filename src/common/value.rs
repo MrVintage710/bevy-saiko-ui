@@ -5,7 +5,7 @@
 
 use std::ops::{Deref, DerefMut};
 
-use bevy::{prelude::*};
+use bevy::prelude::*;
 
 //==============================================================================
 //          Value Enum

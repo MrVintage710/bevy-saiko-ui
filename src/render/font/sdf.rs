@@ -2,6 +2,7 @@ use std::num::NonZeroU32;
 
 use bevy::{asset::{AssetLoader, AsyncReadExt}, ecs::reflect, math::U16Vec2, prelude::*, render::{render_resource::{AddressMode, BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingResource, BindingType, Extent3d, FilterMode, ImageCopyTexture, ImageDataLayout, Origin3d, Sampler, SamplerBindingType, SamplerDescriptor, ShaderStages, Texture, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension}, renderer::{RenderDevice, RenderQueue}, Extract, RenderApp}, utils::{BoxedFuture, HashMap}};
 use etagere::{euclid::{Box2D, UnknownUnit}, Allocation, AtlasAllocator, Size};
+use fit_text::CharacterWidthCache;
 use thiserror::Error;
 use ttf_parser::{Face, GlyphId};
 use msdfgen::{Bitmap, FillRule, FontExt, MsdfGeneratorConfig, Range, Rgb, Rgba};
@@ -220,6 +221,12 @@ impl SaikoFontSdf {
     }
     
     // pub fn shape(&self, text : String)
+}
+
+impl CharacterWidthCache for SaikoFontSdf {
+    fn char_width(&mut self, character: char, font_size: u32) -> f64 {
+        todo!()
+    }
 }
 
 //==============================================================================

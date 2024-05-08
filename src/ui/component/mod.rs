@@ -5,6 +5,7 @@
 //==============================================================================
 
 pub mod rect;
+pub mod cache;
 
 use std::marker::PhantomData;
 
@@ -22,9 +23,25 @@ use super::{context::SaikoRenderContext, node::SaikoNode};
 //==============================================================================
 
 pub trait SaikoComponent: Component {
+    type Data;
+    
+    fn update_cache(&self, cache : &mut dyn SaikoComponentCache<Data = Self::Data>);
+    
     fn render(&self, buffer: &mut SaikoRenderContext<'_>);
     
     fn should_auto_update() -> bool { true }
+}
+
+//==============================================================================
+//          SaikoComponentCache
+//==============================================================================
+
+pub trait SaikoComponentCache : Resource {
+    type Data;
+    
+    fn push(&mut self, data : Self::Data);
+    
+    fn get(&self) -> &Self::Data;
 }
 
 //==============================================================================

@@ -154,6 +154,9 @@ fn fragment(
     }
     
     return final_color;
+    // var u = textureSample(font_atlas, font_atlas_sampler, uv, 0);
+    // var d = median(u.x, u.y, u.z);
+    // return select(final_color, vec4<f32>(1.0, 1.0, 1.0, 1.0), d > 0.0);
 }
 
 
