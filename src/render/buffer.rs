@@ -17,7 +17,7 @@ pub trait ManualShaderType {
 //             Saikobuffer
 //==============================================================================
 
-#[derive(AsBindGroup, Default)]
+#[derive(AsBindGroup, Default, Component)]
 pub struct SaikoBuffer {
     #[storage(0, read_only)]
     pub rectangles: Vec<SimpleShapeBuffer>,
@@ -43,6 +43,12 @@ impl SaikoBuffer {
     pub fn push_line(&mut self, line: impl Into<LineBuffer>) {
         self.lines.push(line.into())
     }
+    
+    pub fn append(&mut self, other: &Self) {
+        self.rectangles.append(&mut other.rectangles.clone());
+        self.circles.append(&mut other.circles.clone());
+        self.lines.append(&mut other.lines.clone());
+    }
 }
 
 //==============================================================================
@@ -57,7 +63,7 @@ pub struct SaikoPreparedBuffer(pub PreparedBindGroup<()>, pub BindGroup);
 //==============================================================================
 
 /// This is a buffer that describes any shape thato fits in a bounds and is styled with a fill and border.
-#[derive(ShaderType, Default)]
+#[derive(ShaderType, Default, Clone)]
 pub struct SimpleShapeBuffer {
     pub bound : Bounds,
     pub border_style: BorderStyleBuffer,
@@ -100,7 +106,7 @@ impl SimpleShapeBuffer {
 //             RectBuffer
 //==============================================================================
 
-#[derive(ShaderType, Default)]
+#[derive(ShaderType, Default, Clone)]
 pub struct LineBuffer {
     pub bounds : Bounds,
     pub line_style: LineStyleBuffer,
@@ -141,7 +147,7 @@ pub struct LineBuffer {
 // }
 
 #[derive(ShaderType)]
-pub struct TextGlyphBuffer {
+pub struct GlyphBuffer {
     pub bound : Bounds,
     pub family : u32,
     pub uv_min : Vec2,

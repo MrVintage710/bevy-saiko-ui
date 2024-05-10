@@ -24,7 +24,7 @@ use crate::{
     common::MarkSaikoUiDirty,
     render::{
         font::SaikoFontPlugin, pass::{SaikoRenderLabel, SaikoSubGraph}, pipeline::{SaikoRenderPipeline, SaikoRenderPipelinePlugin}
-    },
+    }, ui::component::ComponentCache,
 };
 
 use self::{
@@ -166,14 +166,25 @@ fn extract_cameras_for_render(
     mut commands: Commands,
     mut has_initialized: Local<bool>,
     cameras: Extract<Query<(Entity, Option<&RenderLayers>), With<Camera>>>,
-    ui_dirty: Extract<Res<SaikoRenderState>>,
+    component_cache: Extract<Res<ComponentCache>>,
 ) {
-    if ui_dirty.is_dirty() || !*has_initialized {
+    if component_cache.is_dirty() || !*has_initialized {
         println!("Rendering SaikoUI");
         for (entity, render_layers) in cameras.iter() {
+            let mut render_buffer = SaikoBuffer::default();
+            for (entity, cache_item) in component_cache.get_cache().iter() {
+                match (cache_item.render_layers, render_layers) {
+                    (Some(_), None) |
+                    (None, Some(_)) => continue,
+                    (None, None) => { render_buffer.append(&cache_item.buffer)}
+                    (Some(cache_layers), Some(layers)) => {
+                        if cache_layers.intersects(layers) {render_buffer.append(&cache_item.buffer)}
+                    }
+                }
+            }
             let mut cam_entity = commands.get_or_spawn(entity);
             let render_layers = render_layers.map(|value| value.clone());
-            cam_entity.insert(SaikoRenderTarget(render_layers, SaikoBuffer::default()));
+            cam_entity.insert(SaikoRenderTarget(render_layers, render_buffer));
         }
 
         *has_initialized = true;
@@ -200,21 +211,6 @@ fn prepare_bind_groups(
         ) else {
             continue;
         };
-        
-        // let font_bind_group = render_device.create_bind_group(
-        //     "SaikoBindGroup", 
-        //     &saiko_pipeline.font_bind_group_layout, 
-        //     &[
-        //         BindGroupEntry {
-        //             binding: 0,
-        //             resource: BindingResource::TextureViewArray(&[font_atlas_data.texture_view(), font_atlas_data.texture_view()]),
-        //         },
-        //         BindGroupEntry {
-        //             binding: 1,
-        //             resource: BindingResource::Sampler(&saiko_pipeline.font_atlas_sampler),
-        //         },
-        //     ]
-        // );
         
         let font_bind_group = gpu_fonts.create_master_bind(render_device.as_ref(), saiko_pipeline.as_ref());
         

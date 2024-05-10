@@ -7,7 +7,7 @@ pub mod shaping;
 use bevy::prelude::*;
 
 use self::{
-    component::{rect::RectComponent, SaikoComponentPlugin},
+    component::{rect::RectComponent, SaikoComponentPlugin, SaikoComponentsPlugin},
     node::SaikoNodePlugin,
 };
 
@@ -18,6 +18,7 @@ impl Plugin for SaikoUiPlugin {
         app
             .add_plugins(SaikoComponentPlugin::<RectComponent>::default())
             .add_plugins(SaikoNodePlugin)
+            .add_plugins(SaikoComponentsPlugin)
             .register_type::<RectComponent>()
         ;
     }

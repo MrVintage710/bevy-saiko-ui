@@ -7,7 +7,7 @@ use bevy::prelude::*;
 
 use crate::ui::context::{SaikoRenderContext, SaikoRenderContextExtention};
 
-use super::{SaikoComponent, SaikoComponentCache};
+use super::{SaikoComponent};
 
 //==============================================================================
 //          SaikoRectComponent
@@ -56,8 +56,4 @@ impl SaikoComponent for RectComponent {
             //     .border_color(self.border_color)
         ;
     }
-
-    type Data = ();
-
-    fn update_cache(&self, cache : &mut dyn SaikoComponentCache<Data = Self::Data>) {}
 }

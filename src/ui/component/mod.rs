@@ -5,28 +5,37 @@
 //==============================================================================
 
 pub mod rect;
-pub mod cache;
 
-use std::marker::PhantomData;
+use std::{marker::PhantomData};
 
 use bevy::{
     prelude::*,
-    render::{view::RenderLayers, Extract, RenderApp},
+    render::{view::RenderLayers, Extract, RenderApp}, utils::HashMap,
 };
 
-use crate::render::{font::sdf::SaikoFontSdf, SaikoRenderState, SaikoRenderTarget};
+use crate::render::{buffer::SaikoBuffer, font::sdf::SaikoFontSdf, SaikoRenderState, SaikoRenderTarget};
 
 use super::{context::SaikoRenderContext, node::SaikoNode};
+
+pub(crate) struct SaikoComponentsPlugin;
+
+impl Plugin for SaikoComponentsPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .init_resource::<ComponentCache>()
+        
+            .add_systems(First, reset_component_cache)
+        ;
+        
+        
+    }
+}
 
 //==============================================================================
 //          SaikoComponent
 //==============================================================================
 
-pub trait SaikoComponent: Component {
-    type Data;
-    
-    fn update_cache(&self, cache : &mut dyn SaikoComponentCache<Data = Self::Data>);
-    
+pub trait SaikoComponent: Component {    
     fn render(&self, buffer: &mut SaikoRenderContext<'_>);
     
     fn should_auto_update() -> bool { true }
@@ -36,12 +45,35 @@ pub trait SaikoComponent: Component {
 //          SaikoComponentCache
 //==============================================================================
 
-pub trait SaikoComponentCache : Resource {
-    type Data;
+#[derive(Resource, Default)]
+pub struct ComponentCache {
+    cache : HashMap<Entity, ComponentCacheItem>,
+    is_dirty : bool,
+}
+
+impl ComponentCache {
+    pub fn set_item(&mut self, entity : &Entity, buffer : SaikoBuffer, render_layers : Option<RenderLayers>) {
+        let item = ComponentCacheItem {
+            buffer,
+            render_layers,
+        };
+        self.cache.insert(*entity, item);
+        self.is_dirty = true;
+    }
+
+    pub fn is_dirty(&self) -> bool {
+        self.is_dirty
+    }
     
-    fn push(&mut self, data : Self::Data);
-    
-    fn get(&self) -> &Self::Data;
+    pub fn get_cache(&self) -> &HashMap<Entity, ComponentCacheItem> {
+        &self.cache
+    }
+}
+
+#[derive(Default)]
+pub struct ComponentCacheItem {
+    pub buffer : SaikoBuffer,
+    pub render_layers : Option<RenderLayers>,
 }
 
 //==============================================================================
@@ -55,15 +87,6 @@ impl<T: SaikoComponent> Plugin for SaikoComponentPlugin<T> {
         app
             .add_systems(Last, component_change_detection::<T>)
         ;
-        
-        let Ok(render_app) = app.get_sub_app_mut(RenderApp) else {
-            return;
-        };
-
-        render_app.add_systems(
-            ExtractSchedule,
-            extract_components::<T>.after(apply_deferred),
-        );
     }
 }
 
@@ -77,37 +100,29 @@ impl<T: SaikoComponent> Default for SaikoComponentPlugin<T> {
 //          SaikoComponent Systems
 //==============================================================================
 
-fn extract_components<T: SaikoComponent>(
-    mut render_targets: Query<(&mut SaikoRenderTarget, Option<&RenderLayers>)>,
-    query : Extract<Query<(&T, &SaikoNode, Option<&RenderLayers>, Option<&InheritedVisibility>)>>,
-    fonts : Extract<Res<Assets<SaikoFontSdf>>>
+fn reset_component_cache(
+    mut cache : ResMut<ComponentCache>
 ) {
-    for (mut render_target, render_target_layers) in render_targets.iter_mut() {
-        for (component, node, component_render_layers, component_visability) in query.iter() {
-            let visable = component_visability.map_or(true, |v| v.get());
-            let on_layer = match (render_target_layers, component_render_layers) {
-                (Some(render_layers), Some(component_render_layers)) => {
-                    render_layers.intersects(component_render_layers)
-                }
-                (None, Some(_)) | (Some(_), None) => false,
-                _ => true,
-            };
-
-            if on_layer && visable {
-                //In future releases, this code should happen somewhere else
-                let mut render_context = SaikoRenderContext::new(&mut render_target.1, fonts.as_ref(), *node.bounds());
-                component.render(&mut render_context);
-            }
-        }
-    }
+    cache.is_dirty = false;
 }
 
 fn component_change_detection<T: SaikoComponent>(
     mut render_state : ResMut<SaikoRenderState>,
-    components : Query<(Ref<T>, Ref<SaikoNode>)>
+    mut component_cache : ResMut<ComponentCache>,
+    fonts : Res<Assets<SaikoFontSdf>>,
+    components : Query<(Entity, Ref<T>, Ref<SaikoNode>, Option<&RenderLayers>)>,
 ) {
-    for (component, node) in components.iter() {
+    for (entity, component, node, render_layers) in components.iter() {
         if T::should_auto_update() && (node.is_changed() || component.is_changed()) {
+            println!("Updating Component");
+            let mut buffer = SaikoBuffer::default();
+            let mut render_context = SaikoRenderContext::new(&mut buffer, fonts.as_ref(), *node.bounds());
+            component.render(&mut render_context);
+            
+            drop(render_context);
+            
+            component_cache.set_item(&entity, buffer, render_layers.map(|layers| layers.clone()));
+            
             render_state.mark_dirty();
         }
     }
