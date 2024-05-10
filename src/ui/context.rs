@@ -2,6 +2,7 @@ use std::{rc::Rc, sync::RwLock};
 
 use bevy::{asset::{Assets, Handle}, math::{Vec2, Vec4}, render::color::Color, text::Font};
 use cosmic_text::Buffer;
+use fit_text::CharacterWidthCache;
 
 use crate::{common::{bounds::Bounds, value::{Percent, Value}, TextHorizontalAlign, TextVerticalAlign}, render::{buffer::{BorderStyleBuffer, FillStyleBuffer, LineBuffer, LineStyleBuffer, SaikoBuffer, SimpleShapeBuffer}, font::sdf::{SaikoFontSdf, DEFAULT_FONT}}};
 
@@ -13,8 +14,40 @@ use super::position::RelativePosition;
 
 pub struct SaikoInnerContext<'r> {
     buffer : &'r mut SaikoBuffer,
-    fonts : &'r Assets<SaikoFontSdf>,
+    fonts : &'r mut Assets<SaikoFontSdf>,
     should_debug : bool
+}
+
+impl SaikoInnerContext<'_> {
+    fn debug_line(&mut self, a : impl Into<Vec2>, b : impl Into<Vec2>) {
+        if self.should_debug {
+            let border_style = BorderStyleBuffer {
+                border_width : 0.0,
+                ..Default::default()
+            };
+            self.buffer.push_line(LineBuffer {
+                bounds: Bounds::new(a.into(), b.into(), i32::MAX),
+                line_style: LineStyleBuffer::default(),
+                border_style,
+                fill_style: Color::RED.into(),
+            })
+        }
+    }
+    
+    fn debug_rect(&mut self, a : impl Into<Vec2>, b : impl Into<Vec2>) {
+        if self.should_debug {
+            let border_style = BorderStyleBuffer {
+                border_width : 1.0,
+                border_color : Color::RED,
+                ..Default::default()
+            };
+            self.buffer.push_rect(SimpleShapeBuffer {
+                bound: Bounds::new(a.into(), b.into(), i32::MAX),
+                border_style,
+                fill_style: Color::default().with_a(0.0).into(),
+            })
+        }
+    }
 }
 
 //==============================================================================
@@ -27,7 +60,7 @@ pub struct SaikoRenderContext<'r> {
 }
 
 impl <'r> SaikoRenderContext<'r> {
-    pub fn new(buffer: &'r mut SaikoBuffer, fonts: &'r Assets<SaikoFontSdf>, bounds: Bounds) -> Self {
+    pub fn new(buffer: &'r mut SaikoBuffer, fonts: &'r mut Assets<SaikoFontSdf>, bounds: Bounds) -> Self {
         Self { inner : Rc::new(RwLock::new(SaikoInnerContext { buffer, fonts, should_debug : false})) , bounds }
     }
 
@@ -120,6 +153,7 @@ pub trait SaikoRenderContextExtention<'r> : Drop {
             text: text.to_string(),
             horizontal_align: TextHorizontalAlign::Left,
             vertical_align : TextVerticalAlign::Top,
+            font_size: 32,
             font: None,
         }
     }
@@ -313,12 +347,18 @@ pub struct SaikoRenderContextTextStyler<'r> {
     inner : Rc<RwLock<SaikoInnerContext<'r>>>,
     text : String,
     font : Option<Handle<SaikoFontSdf>>,
+    font_size : u32,
     bounds : Bounds,
     horizontal_align : TextHorizontalAlign,
     vertical_align : TextVerticalAlign
 }
 
 impl <'r> SaikoRenderContextTextStyler<'r> {
+    pub fn font_size(mut self, size : u32) -> Self {
+        self.font_size = size;
+        self
+    }
+    
     pub fn font(mut self, font : Handle<SaikoFontSdf>) -> Self {
         self.font = Some(font);
         self
@@ -346,7 +386,7 @@ impl <'r> SaikoRenderContextExtention<'r> for SaikoRenderContextTextStyler<'r> {
 }
 
 impl Drop for SaikoRenderContextTextStyler<'_> {
-    fn drop(&mut self) {
+    fn drop(&mut self) {    
         // if self.inner.read().unwrap().should_debug {
         //     self
                 
@@ -354,8 +394,48 @@ impl Drop for SaikoRenderContextTextStyler<'_> {
         // }
         
         let mut inner = self.inner.write().unwrap();
-        let font_handle = self.font.clone().unwrap_or(DEFAULT_FONT);
-        let font = inner.fonts.get(font_handle).expect("While rendering text, tried to render a font that doesn't exist.");
+        let font = inner.fonts.get_mut(self.font.clone().unwrap_or(DEFAULT_FONT)).unwrap();
+        let metrics = font.metrics_map(self.text.chars());
+        let min = self.bounds.min();
+        let max = self.bounds.max();
+        println!("min : {}, max : {}", min, max);
+        let positioned_lines = font.justify_text(self.text.clone(), ((min.x as f64, min.y as f64), (max.x as f64 * 2.0, max.y as f64 * 2.0)), self.font_size);
+        drop(font);
+        
+        println!("Positioned Lines : {:?}", positioned_lines);
+        
+        for ((x, y), text) in positioned_lines.iter() {
+            let (x, y) = (*x as f32, -y as f32);
+            inner.debug_line((x, y), (x + self.bounds.width(), y));
+            
+            let mut total_advance = 0.0;
+            for c in text.chars() {
+                let Some(metrics) = metrics.get(&c) else { println!("Skipping {}", c); continue; };
+                // println!("'{}' Metrics : {:?}", c, metrics);
+                let gx = metrics.x(self.font_size) as f32;
+                let gy = metrics.y(self.font_size) as f32;
+                let width = metrics.width(self.font_size) as f32;
+                let height = metrics.height(self.font_size) as f32;
+                let h_advance = metrics.h_advance(self.font_size) as f32;
+                
+                // println!("gx : {}, gy : {}, width : {}, height : {}, h_advance : {}", gx, gy, width, height, h_advance);
+                // let v_advance = metrics.v_advance(self.font_size) as f32;
+                inner.debug_rect((x + total_advance + gx, y + gy), (width / 2.0, height / 2.0));
+                total_advance += h_advance;
+            }
+        }
+        
+        // drop(inner);
+        
+        // for ((x, y), text) in positioned_lines {
+        //     let (x, y) = (x as f32, -y as f32);
+        //     self.line((x, y), (x + self.bounds.width(), y)).border_thickness(0.0).color(Color::RED).thickness(1.0);
+            
+        //     for c in text.chars() {
+        //         //TODO: Handle when the character is not in the font, replace with fallback glyph.
+                
+        //     }
+        // }
         
         // let buffer = Buffer::new(font_system, metrics)
     }

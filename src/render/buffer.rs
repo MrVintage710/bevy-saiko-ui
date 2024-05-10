@@ -192,6 +192,14 @@ impl Default for FillStyleBuffer {
     }
 }
 
+impl From<Color> for FillStyleBuffer {
+    fn from(color: Color) -> Self {
+        FillStyleBuffer {
+            fill_color: color,
+        }
+    }
+}
+
 //==============================================================================
 //             LineStyleBuffer
 //==============================================================================

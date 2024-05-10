@@ -30,4 +30,20 @@ impl Bounds {
             z_index,
         }
     }
+    
+    pub fn min(&self) -> Vec2 {
+        self.center - self.size
+    }
+    
+    pub fn max(&self) -> Vec2 {
+        self.center + self.size
+    }
+    
+    pub fn width(&self) -> f32 {
+        self.size.x * 2.0
+    }
+    
+    pub fn height(&self) -> f32 {
+        self.size.y * 2.0
+    }
 }

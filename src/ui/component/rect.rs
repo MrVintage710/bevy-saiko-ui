@@ -47,7 +47,7 @@ impl SaikoComponent for RectComponent {
                 .color(self.background_color)
                 .border_color(self.border_color)
                 .border_thickness(self.border_thickness)
-            .align_center(50.0, 50.0).text("")
+            .text("This is a test to see if the text is working. I really hope that it wrapping.").font_size(64).debug()
                 
             // .align_center(75.0, 75.0).circle().color(self.line_color).border_thickness(self.line_thickness)
             // .relative(0.0, 0.0, 100.0, 100.0).rect()

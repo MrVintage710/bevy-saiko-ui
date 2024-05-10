@@ -13,7 +13,7 @@ use bevy::{
     render::{
         render_asset::RenderAssets,
         render_graph::{RenderGraph, RunGraphOnViewNode, ViewNodeRunner},
-        render_resource::{AsBindGroup, BindGroupEntry, BindingResource},
+        render_resource::AsBindGroup,
         renderer::RenderDevice,
         view::{RenderLayers, ViewTarget},
         Extract, Render, RenderApp, RenderSet,
@@ -75,7 +75,7 @@ impl Plugin for SaikoRenderPlugin {
 
         render_app.add_systems(
             ExtractSchedule,
-            (extract_cameras_for_render, apply_deferred),
+            (extract_ui_for_each_camera, apply_deferred),
         );
         
         render_app.add_systems(
@@ -162,7 +162,7 @@ pub struct SaikoRenderTarget(pub Option<RenderLayers>, pub SaikoBuffer);
 //             SaikoUi Render Systems
 //==============================================================================
 
-fn extract_cameras_for_render(
+fn extract_ui_for_each_camera(
     mut commands: Commands,
     mut has_initialized: Local<bool>,
     cameras: Extract<Query<(Entity, Option<&RenderLayers>), With<Camera>>>,
@@ -172,7 +172,7 @@ fn extract_cameras_for_render(
         println!("Rendering SaikoUI");
         for (entity, render_layers) in cameras.iter() {
             let mut render_buffer = SaikoBuffer::default();
-            for (entity, cache_item) in component_cache.get_cache().iter() {
+            for (_, cache_item) in component_cache.get_cache().iter() {
                 match (cache_item.render_layers, render_layers) {
                     (Some(_), None) |
                     (None, Some(_)) => continue,

@@ -109,14 +109,14 @@ fn reset_component_cache(
 fn component_change_detection<T: SaikoComponent>(
     mut render_state : ResMut<SaikoRenderState>,
     mut component_cache : ResMut<ComponentCache>,
-    fonts : Res<Assets<SaikoFontSdf>>,
+    mut fonts : ResMut<Assets<SaikoFontSdf>>,
     components : Query<(Entity, Ref<T>, Ref<SaikoNode>, Option<&RenderLayers>)>,
 ) {
     for (entity, component, node, render_layers) in components.iter() {
         if T::should_auto_update() && (node.is_changed() || component.is_changed()) {
             println!("Updating Component");
             let mut buffer = SaikoBuffer::default();
-            let mut render_context = SaikoRenderContext::new(&mut buffer, fonts.as_ref(), *node.bounds());
+            let mut render_context = SaikoRenderContext::new(&mut buffer, &mut *fonts, *node.bounds());
             component.render(&mut render_context);
             
             drop(render_context);
